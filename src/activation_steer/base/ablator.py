@@ -1,5 +1,5 @@
 """
-ablator.py - 特定方向の成分を除去するための基底クラス
+ablator.py - Base class for removing direction components
 """
 
 from typing import Sequence, Union
@@ -10,7 +10,7 @@ from src.activation_steer.base.modifier import BaseActivationModifier
 
 
 class BaseActivationAblator(BaseActivationModifier):
-    """特定方向の成分を除去するための基底クラス"""
+    """Base class for removing direction components"""
 
     def __init__(
         self,
@@ -21,14 +21,14 @@ class BaseActivationAblator(BaseActivationModifier):
         positions: str = "all",
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            persona_vector: Persona Vector（この方向成分を除去）
-            layer_idx: 対象レイヤーのインデックス（0-based、デフォルト: -1）
-            positions: 反映位置（"all"|"prompt"|"response"）
-            debug: デバッグ出力を有効化
+            model: Target model
+            persona_vector: Persona vector (direction to be removed)
+            layer_idx: Target layer index (0-based, default: -1)
+            positions: Application position ("all"|"prompt"|"response")
+            debug: Enable debug output
         """
         super().__init__(model, layer_idx=layer_idx, positions=positions, debug=debug)
 
@@ -46,19 +46,19 @@ class BaseActivationAblator(BaseActivationModifier):
                 f"Vector length {self.persona_vector.numel()} ≠ model hidden_size {hidden}"
             )
 
-        # 単位ベクトルを事前計算
+        # Pre-compute unit vector
         self.unit_vector = self.persona_vector / (self.persona_vector.norm() + 1e-8)
 
     def _remove_persona_direction(self, t: torch.Tensor) -> torch.Tensor:
-        """テンソルからPersona Vector方向の成分を除去
+        """Remove persona vector direction component from tensor
 
         ablated = t - (t · unit_vec) * unit_vec
 
         Args:
-            t: 入力テンソル [batch, seq_len, hidden]
+            t: Input tensor [batch, seq_len, hidden]
 
         Returns:
-            Persona Vector方向成分を除去後のテンソル
+            Tensor with persona vector direction removed
         """
         unit_vec = self.unit_vector
 
@@ -83,4 +83,3 @@ class BaseActivationAblator(BaseActivationModifier):
 
         else:
             raise ValueError(f"Invalid positions: {self.positions}")
-

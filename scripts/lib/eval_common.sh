@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# eval_common.sh - Steering評価スクリプトの共通機能
+# eval_common.sh - Common functions for steering evaluation scripts
 #
-# 使い方:
+# Usage:
 #   source scripts/lib/eval_common.sh
 
 # ========== Default Configuration ==========
@@ -259,4 +259,3 @@ run_eval_steering_head() {
     
     return $exit_code
 }
-

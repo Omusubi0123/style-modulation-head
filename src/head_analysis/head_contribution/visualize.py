@@ -1,5 +1,5 @@
 """
-visualize.py - Head Contribution可視化ロジック
+visualize.py - Head Contribution visualization logic
 """
 
 import os
@@ -21,33 +21,33 @@ def visualize_head_contribution_heatmap(
     cbar_label: str = "Contribution Score",
     figsize: Optional[tuple] = None,
 ) -> str:
-    """Head contributionヒートマップを可視化
+    """Visualize head contribution as heatmap
 
     Args:
-        matrix: 貢献度行列 [num_layers, num_heads]
-        layer_list: 層インデックスのリスト
-        num_heads: ヘッド数
-        save_path: 保存パス
-        title: タイトル（オプション）
-        xlabel: X軸ラベル
-        ylabel: Y軸ラベル
-        cbar_label: カラーバーラベル
-        figsize: 図のサイズ（Noneの場合は自動計算）
+        matrix: Contribution matrix [num_layers, num_heads]
+        layer_list: List of layer indices
+        num_heads: Number of heads
+        save_path: Save path
+        title: Title (optional)
+        xlabel: X-axis label
+        ylabel: Y-axis label
+        cbar_label: Colorbar label
+        figsize: Figure size (auto-calculated if None)
 
     Returns:
-        保存パス
+        Save path
     """
     n_layers = len(layer_list)
     n_heads = num_heads
 
-    # 図のサイズを自動計算
+    # Auto-calculate figure size
     if figsize is None:
         base_size = max(8, max(n_heads, n_layers) * 0.35)
         figsize = (base_size, base_size)
 
     plt.figure(figsize=figsize)
 
-    # カラーマップの設定
+    # Colormap settings
     vmin = matrix.min()
     vmax = matrix.max()
 
@@ -99,21 +99,21 @@ def visualize_traits_comparison_heatmap(
     cbar_label: str = "Contribution Score",
     figsize: Optional[tuple] = None,
 ) -> str:
-    """複数trait比較のヒートマップを可視化
+    """Visualize multi-trait comparison heatmap
 
     Args:
-        matrix: 貢献度行列 [num_traits, num_heads]
-        trait_labels: trait名のリスト
-        num_heads: ヘッド数
-        save_path: 保存パス
-        title: タイトル（オプション）
-        xlabel: X軸ラベル
-        ylabel: Y軸ラベル
-        cbar_label: カラーバーラベル
-        figsize: 図のサイズ
+        matrix: Contribution matrix [num_traits, num_heads]
+        trait_labels: List of trait names
+        num_heads: Number of heads
+        save_path: Save path
+        title: Title (optional)
+        xlabel: X-axis label
+        ylabel: Y-axis label
+        cbar_label: Colorbar label
+        figsize: Figure size
 
     Returns:
-        保存パス
+        Save path
     """
     n_traits = len(trait_labels)
     n_heads = num_heads
@@ -172,14 +172,14 @@ def print_top_heads(
     top_k: int = 10,
     raw_matrix: Optional[np.ndarray] = None,
 ) -> None:
-    """上位のヘッドを表示
+    """Print top contributing heads
 
     Args:
-        matrix: 正規化された貢献度行列 [num_layers, num_heads]
-        layer_list: 層インデックスのリスト
-        num_heads: ヘッド数
-        top_k: 表示する上位の数
-        raw_matrix: 生の内積値行列（オプション）
+        matrix: Normalized contribution matrix [num_layers, num_heads]
+        layer_list: List of layer indices
+        num_heads: Number of heads
+        top_k: Number of top heads to display
+        raw_matrix: Raw inner product matrix (optional)
     """
     print(f"\nTop {top_k} heads by contribution (normalized):")
     flat_idx = np.argsort(matrix.flatten())[::-1]
@@ -194,4 +194,3 @@ def print_top_heads(
             print(f"  {rank + 1}. Layer {layer_idx+1}, Head {head_idx+1}: {sim_norm:.4f} (raw: {sim_raw:.2e})")
         else:
             print(f"  {rank + 1}. Layer {layer_idx+1}, Head {head_idx+1}: {sim_norm:.4f}")
-

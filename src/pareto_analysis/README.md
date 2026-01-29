@@ -104,16 +104,10 @@ uv run python src/pareto_analysis/plot_pareto_curve.py single \
     --output_dir data/plots \
     --trait evil
 
-# All traits for a model (linear scale)
+# All traits for a model
 uv run python src/pareto_analysis/plot_pareto_curve.py all \
     --model qwen \
-    --traits "evil,sycophantic,hallucinating" \
-    --use_log_scale False
-
-# Both linear and log scales
-uv run python src/pareto_analysis/plot_pareto_curve.py both \
-    --model qwen \
-    --traits "evil,sycophantic"
+    --traits "evil,sycophantic,hallucinating"
 ```
 
 #### 4. Compute Pareto Score
@@ -139,7 +133,6 @@ uv run python src/pareto_analysis/pareto_score.py \
 ```bash
 ./src/pareto_analysis/run_pareto_plot.sh
 ./src/pareto_analysis/run_pareto_plot.sh --model qwen --traits "evil,sycophantic"
-./src/pareto_analysis/run_pareto_plot.sh --log-only  # Log scale only
 ```
 
 ## Pareto Score Algorithm
@@ -165,11 +158,10 @@ Higher scores indicate better Pareto frontiers (achieving higher trait scores at
 ### Pareto Plots
 
 PNG and PDF files showing:
-- X-axis: Trait score (or `100 - trait` for log scale)
-- Y-axis: Coherency score (or `100 - coherency` for log scale)
+- X-axis: Trait score
+- Y-axis: Coherency score
 - Each steering module as a different colored line with arrows showing coefficient progression
 
 ### Pareto Scores
 
 Numerical scores (0-100) quantifying the quality of each Pareto frontier for comparison across steering methods.
-

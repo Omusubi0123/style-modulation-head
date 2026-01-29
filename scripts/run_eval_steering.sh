@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# run_eval_steering.sh - 標準的なステアリング評価
+# run_eval_steering.sh - Standard steering evaluation
 #
-# 使い方:
+# Usage:
 #   ./scripts/run_eval_steering.sh
 #
-# 環境変数で設定可能:
+# Configuration via environment variables:
 #   GPU, STEERING_TYPE, PERSONA_INSTRUCTION_TYPE, JUDGE_MODEL
 
 set -o pipefail
@@ -48,10 +48,10 @@ for model in "${MODELS[@]}"; do
                 else
                     completed=$((completed + 1))
                 fi
-                log "✓ Completed: $trait layer$layer coef$coef"
+                log "Completed: $trait layer$layer coef$coef"
             else
                 failed+=("$trait-$model-layer$layer-coef$coef")
-                log "✗ Failed: $trait layer$layer coef$coef"
+                log "Failed: $trait layer$layer coef$coef"
             fi
             log_separator
         done
@@ -62,4 +62,3 @@ done
 print_summary "$total" "$completed" "$skipped" "${#failed[@]}" "${failed[@]}"
 
 [[ ${#failed[@]} -eq 0 ]] && exit 0 || exit 1
-

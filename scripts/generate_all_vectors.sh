@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-# generate_all_vectors.sh - 全モデル・全トレイトのPersona Vector抽出
+# generate_all_vectors.sh - Extract persona vectors for all models and traits
 #
-# 使い方:
+# Usage:
 #   ./scripts/generate_all_vectors.sh [GPU_ID]
 #
-# 設定:
-#   TRAITS, MODELSを下記で指定
+# Configuration:
+#   TRAITS, MODELS are specified below
 
 set -o pipefail
 
@@ -87,7 +87,7 @@ for model in "${MODELS[@]}"; do
         fi
         
         if ! check_csv_exists "$model" "$trait"; then
-            log "✗ CSV files not found for $trait-$model"
+            log "CSV files not found for $trait-$model"
             failed+=("$trait-$model-csv")
             continue
         fi
@@ -123,7 +123,7 @@ for model in "${MODELS[@]}"; do
             --save_dir "data/persona_vectors/$model/" \
             --threshold 50 | tee -a "$LOG_FILE"
         
-        log "✓ Completed $trait for $model"
+        log "Completed $trait for $model"
         log "----------------------------------------"
     done
 done
@@ -139,7 +139,6 @@ if [[ ${#failed[@]} -gt 0 ]]; then
     for f in "${failed[@]}"; do log "  - $f"; done
     exit 1
 else
-    log "🎉 All vector generations completed successfully!"
+    log "All vector generations completed successfully!"
     exit 0
 fi
-

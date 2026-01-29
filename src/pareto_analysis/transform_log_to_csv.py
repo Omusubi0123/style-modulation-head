@@ -1,17 +1,24 @@
-import pandas as pd
-import re
+"""
+transform_log_to_csv.py
+
+Parse experiment log files and transform to structured CSV format.
+Extracts trait scores and coherency scores from steering position comparison logs.
+"""
+
 import os
+import re
+
+import pandas as pd
 
 # ==========================================
-# 設定
+# Configuration
 # ==========================================
 
-# CSVの列（係数）の定義
+# CSV column headers (coefficients)
 COLUMN_HEADERS = ['0.5', '1', '1.5', '2', '2.5', '3', '4', '5', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24']
 
-# 出力順序と表示ラベルの定義
-# (内部識別ID, CSV上の表示ラベル)
-# ※ CSV上のラベルは添付ファイルに基づきますが、最後の項目は文脈に合わせて _anti を付与しています
+# Output order and display labels
+# (internal ID, CSV display label)
 CATEGORY_DEFINITIONS = [
     ('attn_residual', 'attn_residual'),
     ('mlp_residual', 'mlp_residual'),
@@ -25,11 +32,11 @@ CATEGORY_DEFINITIONS = [
 SUB_TYPES_ORDER = ['neg_add', 'pos_add', 'pos_subtract']
 
 # ==========================================
-# 解析ロジック
+# Parsing Logic
 # ==========================================
 
 def get_category_id(path):
-    """ファイルパスからカテゴリIDを判定する"""
+    """Determine category ID from file path."""
     if 'post_attention_residual' in path:
         return 'attn_residual'
     elif 'mlp_residual' in path:
@@ -37,12 +44,11 @@ def get_category_id(path):
     elif 'attention_output' in path:
         return 'attn_output'
     
-    # Head関連の判定
+    # Head-related determination
     is_anti = 'correlated_anti_heads' in path
     is_cor = 'correlated_heads' in path
     
-    # mul_s_div_h か div_h かの判定
-    # mul_s_div_h は div_h を含むため、先に mul_s をチェックする
+    # Check for mul_h_div_s or normal
     is_mul_h_div_s = 'mul_h_div_s' in path
     is_normal = 'normal' in path
     
@@ -59,29 +65,38 @@ def get_category_id(path):
             
     return None
 
+
 def parse_log_file(
     input_path: str,
     output_path: str,
     extract_trait: str = "evil",
 ):
+    """
+    Parse log file and transform to structured CSV.
+    
+    Args:
+        input_path: Path to input log file
+        output_path: Path to output CSV file
+        extract_trait: Trait name to extract (e.g., "evil", "sycophantic")
+    """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
     if not os.path.exists(input_path):
-        print(f"エラー: 入力ファイル '{input_path}' が見つかりません。")
+        print(f"Error: Input file not found: {input_path}")
         return
 
     with open(input_path, 'r', encoding='utf-8') as f:
         log_text = f.read()
 
-    # データ格納用辞書の初期化
-    # キー: (category_id, sub_type), 値: {col: text}
+    # Initialize data storage dictionary
+    # Key: (category_id, sub_type), Value: {col: text}
     data_store = {}
     for cat_id, _ in CATEGORY_DEFINITIONS:
         for sub in SUB_TYPES_ORDER:
             data_store[(cat_id, sub)] = {col: None for col in COLUMN_HEADERS}
 
     blocks = log_text.strip().split('\n\n')
-    print(f"--- 解析開始 ({len(blocks)} ブロック) ---")
+    print(f"--- Starting parsing ({len(blocks)} blocks) ---")
 
     for block in blocks:
         lines = block.strip().split('\n')
@@ -92,26 +107,24 @@ def parse_log_file(
         extract_trait_line = lines[1]
         coh_line = lines[2]
 
-        # 1. カテゴリの特定
+        # 1. Identify category
         cat_id = get_category_id(path_line)
         if not cat_id:
-            # print(f"[スキップ] カテゴリ不明: {path_line}")
             continue
 
-        # 2. 方向と係数の抽出
-        match = re.search(f'{extract_trait}_(neg|pos)_coef\s*(-?[\d\.]+)', path_line)
+        # 2. Extract direction and coefficient
+        match = re.search(f'{extract_trait}_(neg|pos)_coef\\s*(-?[\\d\\.]+)', path_line)
         if not match:
-            # print(f"[スキップ] 係数パターン不一致: {path_line}")
             continue
 
         direction = match.group(1)   # neg or pos
-        coef_str = match.group(2)    # 文字列 "-3.0", "10.0" 等
+        coef_str = match.group(2)    # string "-3.0", "10.0" etc.
         try:
             coef_val = float(coef_str)
         except ValueError:
             continue
 
-        # 3. サブタイプの決定
+        # 3. Determine sub-type
         sub_type = None
         if direction == 'neg':
             sub_type = 'neg_add'
@@ -121,29 +134,29 @@ def parse_log_file(
             else:
                 sub_type = 'pos_add'
 
-        # 列名の決定（絶対値を使用）
+        # Determine column name (use absolute value)
         abs_coef = abs(coef_val)
         if abs_coef.is_integer():
-            target_col = str(int(abs_coef)) # 10.0 -> "10"
+            target_col = str(int(abs_coef))  # 10.0 -> "10"
         else:
             target_col = str(abs_coef)
 
         if target_col not in COLUMN_HEADERS:
             continue
 
-        # 4. データの格納
+        # 4. Store data
         cell_content = f"{extract_trait_line}\n{coh_line}"
         
-        # 重複チェックと格納
+        # Check for duplicates and store
         current_val = data_store[(cat_id, sub_type)][target_col]
         if current_val is None:
             data_store[(cat_id, sub_type)][target_col] = cell_content
         else:
-            # 万が一同じセルに複数のデータが来る場合は追記
+            # If multiple data for the same cell, append
             data_store[(cat_id, sub_type)][target_col] = current_val + "\n\n" + cell_content
 
     # ==========================================
-    # CSV出力
+    # CSV Output
     # ==========================================
     rows = []
     is_very_first = True
@@ -153,10 +166,10 @@ def parse_log_file(
         for sub in SUB_TYPES_ORDER:
             row_data = {}
             
-            # Level 0: evil (全体の最初だけ)
+            # Level 0: trait (only for the very first row)
             row_data['Level0'] = extract_trait if is_very_first else None
             
-            # Level 1: Category Label (各カテゴリの最初だけ)
+            # Level 1: Category Label (only for first row of each category)
             row_data['Level1'] = cat_label if is_comp_first else None
             
             # Level 2: Sub Type
@@ -173,12 +186,12 @@ def parse_log_file(
 
     df = pd.DataFrame(rows)
     
-    # ヘッダーを空文字にしてCSVの見た目を調整
+    # Set column headers to empty strings for visual alignment
     final_columns = ['', '', ''] + COLUMN_HEADERS
     df.columns = final_columns
 
     df.to_csv(output_path, index=False, encoding='utf-8-sig')
-    print(f"--- 変換完了: {output_path} を作成しました ---")
+    print(f"--- Transformation complete: Created {output_path} ---")
 
 
 if __name__ == '__main__':

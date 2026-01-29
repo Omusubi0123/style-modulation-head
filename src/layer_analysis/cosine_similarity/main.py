@@ -1,13 +1,13 @@
 """
-main.py - Residual Stream Cosine Similarity分析のエントリーポイント
+main.py - Entry point for Residual Stream Cosine Similarity analysis
 
-使用例:
-    # 単一traitの分析
+Usage:
+    # Single trait analysis
     python -m src.layer_analysis.cosine_similarity.main analyze_trait \
         --model_name "Qwen/Qwen2.5-7B-Instruct" \
         --trait "evil"
 
-    # 全traitの分析
+    # All traits analysis
     python -m src.layer_analysis.cosine_similarity.main analyze_all \
         --model_name "Qwen/Qwen2.5-7B-Instruct"
 """
@@ -26,7 +26,7 @@ from src.layer_analysis.cosine_similarity.visualize import (
 )
 
 
-# デフォルト設定
+# Default settings
 DEFAULT_PERSONA_VECTORS_DIR = "data/persona_vectors"
 DEFAULT_OUTPUT_DIR = "data/layer_analysis"
 DEFAULT_VECTOR_TYPE = "response_avg_diff"
@@ -41,22 +41,22 @@ def analyze_trait(
     vector_type: str = DEFAULT_VECTOR_TYPE,
     stream_type: str = "input",  # "input" or "output"
 ) -> Optional[str]:
-    """単一traitのResidual Stream類似度を分析
+    """Analyze Residual Stream similarity for a single trait
 
     Args:
-        model_name: モデル名 (e.g., "Qwen/Qwen2.5-7B-Instruct")
-        trait: 特性名 (e.g., "evil")
-        persona_vectors_dir: ベクトルディレクトリ
-        output_dir: 出力ディレクトリ
-        vector_type: ベクトルタイプ
+        model_name: Model name (e.g., "Qwen/Qwen2.5-7B-Instruct")
+        trait: Trait name (e.g., "evil")
+        persona_vectors_dir: Vector directory
+        output_dir: Output directory
+        vector_type: Vector type
         stream_type: "input" (layernorm) or "output"
 
     Returns:
-        保存されたファイルパス
+        Saved file path
     """
     print(f"Analyzing: {model_name} - {trait} ({stream_type})")
 
-    # ベクトルを読み込む
+    # Load vectors
     vectors_by_trait = load_vectors_for_positions(
         Path(persona_vectors_dir),
         model_name,
@@ -70,7 +70,7 @@ def analyze_trait(
 
     vectors_dict = vectors_by_trait[trait]
 
-    # 必要なベクトルがあるか確認
+    # Check if required vectors exist
     if stream_type == "input":
         attn_key, mlp_key = "attn_layernorm", "mlp_layernorm"
     else:
@@ -80,7 +80,7 @@ def analyze_trait(
         print(f"Error: required vectors not found for {stream_type}")
         return None
 
-    # 類似度行列を計算
+    # Compute similarity matrix
     similarity_matrix = compute_residual_stream_similarity(
         vectors_dict[attn_key],
         vectors_dict[mlp_key],
@@ -88,12 +88,12 @@ def analyze_trait(
 
     num_layers = vectors_dict[attn_key].shape[0]
 
-    # 出力ディレクトリを作成
+    # Create output directory
     safe_model_name = model_name.replace("/", "_")
     save_dir = Path(output_dir) / "residual_stream" / safe_model_name / trait
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    # 可視化
+    # Visualize
     save_path = save_dir / f"cosine_similarity_{stream_type}.png"
     result = visualize_residual_stream_similarity(
         similarity_matrix.numpy(),
@@ -111,14 +111,14 @@ def analyze_all(
     vector_type: str = DEFAULT_VECTOR_TYPE,
     stream_types: List[str] = ["input", "output"],
 ) -> None:
-    """全traitのResidual Stream類似度を分析
+    """Analyze Residual Stream similarity for all traits
 
     Args:
-        model_name: モデル名
-        persona_vectors_dir: ベクトルディレクトリ
-        output_dir: 出力ディレクトリ
-        vector_type: ベクトルタイプ
-        stream_types: 分析するstream type（"input", "output"）
+        model_name: Model name
+        persona_vectors_dir: Vector directory
+        output_dir: Output directory
+        vector_type: Vector type
+        stream_types: Stream types to analyze ("input", "output")
     """
     print(f"Loading vectors for {model_name}...")
 
@@ -151,4 +151,3 @@ if __name__ == "__main__":
         "analyze_trait": analyze_trait,
         "analyze_all": analyze_all,
     })
-

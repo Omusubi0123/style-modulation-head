@@ -1,5 +1,5 @@
 """
-judge.py - ジャッジ評価機能
+judge.py - Judge evaluation functionality
 """
 
 import asyncio
@@ -19,20 +19,20 @@ async def run_judge_evaluations(
     prompts: List[str],
     max_concurrent_judges: int = 4,
 ) -> List[pd.DataFrame]:
-    """すべての質問に対してジャッジ評価を実行する
+    """Run judge evaluations for all questions
 
     Args:
-        questions: Questionオブジェクトのリスト
-        all_paraphrases: すべての質問テキストのリスト
-        all_answers: すべての回答のリスト
-        question_indices: 各回答が属する質問のインデックス
-        prompts: プロンプトのリスト
-        max_concurrent_judges: 最大同時判定数
+        questions: List of Question objects
+        all_paraphrases: List of all question texts
+        all_answers: List of all answers
+        question_indices: Index of question each answer belongs to
+        prompts: List of prompts
+        max_concurrent_judges: Maximum concurrent judge calls
 
     Returns:
-        各質問の評価結果を含むDataFrameのリスト
+        List of DataFrames containing evaluation results for each question
     """
-    # 質問ごとのDataFrameを準備
+    # Prepare DataFrames for each question
     question_dfs = []
     all_judge_tasks = []
     all_judge_indices = []  # (question_idx, metric, sample_idx)
@@ -64,7 +64,7 @@ async def run_judge_evaluations(
                 all_judge_tasks.append((judge, question_text, answer))
                 all_judge_indices.append((i, metric, sample_idx))
 
-    # ジャッジ評価を実行
+    # Run judge evaluations
     print(
         f"Running {len(all_judge_tasks)} judge evaluations with max {max_concurrent_judges} concurrent requests..."
     )
@@ -88,11 +88,10 @@ async def run_judge_evaluations(
             all_results[task_idx] = result
             pbar.update(1)
 
-    # 結果をDataFrameに反映
+    # Apply results to DataFrames
     print("Processing judge results...")
     for task_idx, result in enumerate(all_results):
         question_idx, metric, sample_idx = all_judge_indices[task_idx]
         question_dfs[question_idx].loc[sample_idx, metric] = result
 
     return question_dfs
-

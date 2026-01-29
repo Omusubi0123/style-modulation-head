@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# run_eval_steering_head.sh - ヘッド単位のステアリング評価
+# run_eval_steering_head.sh - Head-level steering evaluation
 #
-# 使い方:
+# Usage:
 #   ./scripts/run_eval_steering_head.sh <model> <trait1> [trait2 ...]
 #
-# 例:
+# Example:
 #   ./scripts/run_eval_steering_head.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
 
 set -o pipefail
@@ -69,10 +69,10 @@ for trait in "${TRAITS[@]}"; do
                     else
                         completed=$((completed + 1))
                     fi
-                    log "✓ Completed: $trait layer$layer head$head"
+                    log "Completed: $trait layer$layer head$head"
                 else
                     failed+=("$trait-layer$layer-head$head")
-                    log "✗ Failed: $trait layer$layer head$head"
+                    log "Failed: $trait layer$layer head$head"
                 fi
                 log_separator
             done
@@ -89,10 +89,10 @@ for trait in "${TRAITS[@]}"; do
                 else
                     completed=$((completed + 1))
                 fi
-                log "✓ Completed: $trait layer$layer all_heads"
+                log "Completed: $trait layer$layer all_heads"
             else
                 failed+=("$trait-layer$layer-all_heads")
-                log "✗ Failed: $trait layer$layer all_heads"
+                log "Failed: $trait layer$layer all_heads"
             fi
             log_separator
         fi
@@ -103,4 +103,3 @@ done
 print_summary "$total" "$completed" "$skipped" "${#failed[@]}" "${failed[@]}"
 
 [[ ${#failed[@]} -eq 0 ]] && exit 0 || exit 1
-

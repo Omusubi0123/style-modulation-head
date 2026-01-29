@@ -1,7 +1,7 @@
 """
-eval_persona.py - ペルソナ評価
+eval_persona.py - Persona evaluation
 
-TransformerブロックレベルのステアリングでPersona評価を行う。
+Perform persona evaluation using transformer block level steering.
 """
 
 import asyncio
@@ -38,8 +38,8 @@ async def eval_batched(
     max_tokens=1000,
     steering_type="response",
 ):
-    """すべての質問を一括処理して高速な推論を実現する"""
-    # 全プロンプトを収集
+    """Process all questions in batch for fast inference"""
+    # Collect all prompts
     all_paraphrases = []
     all_conversations = []
     question_indices = []
@@ -52,7 +52,7 @@ async def eval_batched(
 
     print(f"Generating {len(all_conversations)} responses in a single batch...")
 
-    # 回答を生成
+    # Generate answers
     if coef != 0 and vector is not None and layer is not None:
         prompts, answers = sample_with_steering(
             llm,
@@ -75,7 +75,7 @@ async def eval_batched(
             max_tokens=max_tokens,
         )
 
-    # ジャッジ評価を実行
+    # Run judge evaluations
     question_dfs = await run_judge_evaluations(
         questions,
         all_paraphrases,
@@ -106,25 +106,25 @@ def main(
     judge_model="gpt-4.1-mini-2025-04-14",
     version="extract",
 ):
-    """評価を実行する
+    """Execute evaluation
 
     Args:
-        model: 評価するモデル名
-        trait: 評価する特性名
-        output_path: 結果を保存するCSVファイルパス
-        coef: ステアリング係数（デフォルト: 0）
-        vector_path: ステアリングベクトルのパス（オプション）
-        layer: ステアリングレイヤー（オプション）
-        steering_type: ステアリングタイプ（デフォルト: "response"）
-        max_tokens: 最大生成トークン数（デフォルト: 1000）
-        n_per_question: 質問あたりのサンプル数（デフォルト: 5）
-        batch_process: バッチ処理を使用するか（デフォルト: True）
-        max_concurrent_judges: 最大同時判定数（デフォルト: 4）
-        batch_size: バッチサイズ（デフォルト: 100）
-        persona_instruction_type: ペルソナ指示タイプ（オプション）
-        assistant_name: アシスタント名（オプション）
-        judge_model: 判定用モデル名
-        version: データバージョン（デフォルト: "extract"）
+        model: Model name to evaluate
+        trait: Trait name to evaluate
+        output_path: CSV file path to save results
+        coef: Steering coefficient (default: 0)
+        vector_path: Path to steering vector (optional)
+        layer: Steering layer (optional)
+        steering_type: Steering type (default: "response")
+        max_tokens: Maximum generation tokens (default: 1000)
+        n_per_question: Samples per question (default: 5)
+        batch_process: Use batch processing (default: True)
+        max_concurrent_judges: Maximum concurrent judges (default: 4)
+        batch_size: Batch size (default: 100)
+        persona_instruction_type: Persona instruction type (optional)
+        assistant_name: Assistant name (optional)
+        judge_model: Judge model name
+        version: Data version (default: "extract")
     """
     print(output_path)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

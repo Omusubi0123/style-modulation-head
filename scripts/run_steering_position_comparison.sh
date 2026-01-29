@@ -2,23 +2,23 @@
 
 # =============================================================================
 # run_steering_position_comparison.sh
-# Steering位置比較実験の共通スクリプト
+# Common script for steering position comparison experiments
 #
-# 対照実験:
-#   1. attention加算後residual stream (post_attention)
-#   2. mlp加算後residual stream (post_mlp)
-#   3. attention output（residual stream加算前）
-#   4. attention head出力と相関の強いheadのみ
-#   5. attention head出力と相関の強い・反対に強いheadのみ
+# Comparison experiments:
+#   1. Post-attention residual stream (post_attention)
+#   2. Post-MLP residual stream (post_mlp)
+#   3. Attention output (before residual stream addition)
+#   4. Correlated attention heads only
+#   5. Correlated and anti-correlated attention heads
 #
-# 実験条件:
-#   - neg system prompt + steering add → ペルソナ増幅
-#   - pos system prompt + steering add → ペルソナ増幅
-#   - pos system prompt + steering subtract → ペルソナ抑制
+# Experimental conditions:
+#   - neg system prompt + steering add → Persona amplification
+#   - pos system prompt + steering add → Persona amplification
+#   - pos system prompt + steering subtract → Persona suppression
 #
-# 使用方法:
-#   環境変数で設定を指定してから実行
-#   例: MODEL="Qwen/Qwen2.5-7B-Instruct" LAYER=19 ... ./scripts/run_steering_position_comparison.sh
+# Usage:
+#   Set environment variables before running
+#   Example: MODEL="Qwen/Qwen2.5-7B-Instruct" LAYER=19 ... ./scripts/run_steering_position_comparison.sh
 # =============================================================================
 
 set -o pipefail
@@ -26,13 +26,13 @@ set -o pipefail
 # =============================================================================
 # Required Environment Variables (must be set before calling)
 # =============================================================================
-# MODEL              - モデル名 (e.g., "Qwen/Qwen2.5-7B-Instruct")
-# LAYER              - Steering層 (0-indexed)
-# NUM_HEADS          - Attention head数
-# CORRELATED_HEADS   - 相関の強いhead (e.g., "2,4,27")
-# CORRELATED_ANTI_HEADS - 相関の強い・反対に強いhead (e.g., "0,2,4,26,27")
-# NUM_CORRELATED_HEADS - 相関の強いhead数
-# NUM_CORRELATED_ANTI_HEADS - 相関の強い・反対に強いhead数
+# MODEL              - Model name (e.g., "Qwen/Qwen2.5-7B-Instruct")
+# LAYER              - Steering layer (0-indexed)
+# NUM_HEADS          - Number of attention heads
+# CORRELATED_HEADS   - Correlated heads (e.g., "2,4,27")
+# CORRELATED_ANTI_HEADS - Correlated and anti-correlated heads (e.g., "0,2,4,26,27")
+# NUM_CORRELATED_HEADS - Number of correlated heads
+# NUM_CORRELATED_ANTI_HEADS - Number of correlated + anti-correlated heads
 
 # =============================================================================
 # Validate Required Variables
@@ -155,15 +155,13 @@ check_output_exists() {
     return 1
 }
 
-# Note: calc_scaled_coef is no longer needed since we only use normal (1x) scaling
-
 # =============================================================================
 # Evaluation Functions
 # =============================================================================
 
-# Position 1: Attention加算後residual stream (post_attention)
-# ベクトル: mlp_layernorm.pt（attention後residual streamの方向）
-# 加算位置: attn_output（residual加算で反映させる）
+# Position 1: Post-attention residual stream (post_attention)
+# Vector: mlp_layernorm.pt (direction of residual stream after attention)
+# Addition position: attn_output (reflected via residual addition)
 run_position_1() {
     local trait=$1
     local instruction_type=$2
@@ -190,7 +188,7 @@ run_position_1() {
     
     local vector_path="$VECTOR_DIR/${trait}_prompt_avg_diff_${vector_suffix}.pt"
     
-    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python eval/eval_persona_steer_residual_stream.py \
+    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python src/eval/eval_persona_steer_residual_stream.py \
         --model "$MODEL" \
         --trait "$trait" \
         --output_path "$output_path" \
@@ -208,9 +206,9 @@ run_position_1() {
     return ${PIPESTATUS[0]}
 }
 
-# Position 2: MLP加算後residual stream (post_mlp)
-# ベクトル: attn_layernorm.pt（MLP後residual stream = 次層入力の方向）
-# 加算位置: mlp_output（residual加算で反映させる）
+# Position 2: Post-MLP residual stream (post_mlp)
+# Vector: attn_layernorm.pt (direction of residual stream after MLP = next layer input)
+# Addition position: mlp_output (reflected via residual addition)
 run_position_2() {
     local trait=$1
     local instruction_type=$2
@@ -237,7 +235,7 @@ run_position_2() {
     
     local vector_path="$VECTOR_DIR/${trait}_prompt_avg_diff_${vector_suffix}.pt"
     
-    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python eval/eval_persona_steer_residual_stream.py \
+    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python src/eval/eval_persona_steer_residual_stream.py \
         --model "$MODEL" \
         --trait "$trait" \
         --output_path "$output_path" \
@@ -255,7 +253,7 @@ run_position_2() {
     return ${PIPESTATUS[0]}
 }
 
-# Position 3: Attention output（residual stream加算前）
+# Position 3: Attention output (before residual stream addition)
 run_position_3() {
     local trait=$1
     local instruction_type=$2
@@ -282,7 +280,7 @@ run_position_3() {
     
     local vector_path="$VECTOR_DIR/${trait}_prompt_avg_diff_${vector_suffix}.pt"
     
-    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python eval/eval_persona_steer_block.py \
+    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python src/eval/eval_persona_steer_block.py \
         --model "$MODEL" \
         --trait "$trait" \
         --output_path "$output_path" \
@@ -300,7 +298,7 @@ run_position_3() {
     return ${PIPESTATUS[0]}
 }
 
-# Position 4: 相関の強いheadのみ
+# Position 4: Correlated heads only
 run_position_4() {
     local trait=$1
     local instruction_type=$2
@@ -333,7 +331,7 @@ run_position_4() {
     
     local vector_path="$VECTOR_DIR/${trait}_prompt_avg_diff_${vector_suffix}.pt"
     
-    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python eval/eval_persona_steer_head.py \
+    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python src/eval/eval_persona_steer_head.py \
         --model "$MODEL" \
         --trait "$trait" \
         --output_path "$output_path" \
@@ -351,7 +349,7 @@ run_position_4() {
     return ${PIPESTATUS[0]}
 }
 
-# Position 5: 相関の強い・反対に強いhead
+# Position 5: Correlated and anti-correlated heads
 run_position_5() {
     local trait=$1
     local instruction_type=$2
@@ -384,7 +382,7 @@ run_position_5() {
     
     local vector_path="$VECTOR_DIR/${trait}_prompt_avg_diff_${vector_suffix}.pt"
     
-    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python eval/eval_persona_steer_head.py \
+    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH=. uv run python src/eval/eval_persona_steer_head.py \
         --model "$MODEL" \
         --trait "$trait" \
         --output_path "$output_path" \
@@ -435,12 +433,12 @@ for trait in "${TRAITS_ARR[@]}"; do
             # pos + subtract → negative coef (suppress) - only for pos
             
             if [ "$instruction_type" == "neg" ]; then
-                # neg system prompt + add → ペルソナ増幅
+                # neg system prompt + add → Persona amplification
                 coef_signs=(1)
                 conditions=("add")
             else
-                # pos system prompt + add → ペルソナ増幅
-                # pos system prompt + subtract → ペルソナ抑制
+                # pos system prompt + add → Persona amplification
+                # pos system prompt + subtract → Persona suppression
                 coef_signs=(1 -1)
                 conditions=("add" "subtract")
             fi
@@ -479,9 +477,9 @@ for trait in "${TRAITS_ARR[@]}"; do
                     done
                 
                 # For positions 4-5: head steering (normal scaling only)
-                # Position 4-5では12.0と14.0も追加
+                # Position 4-5 also include 12.0 and 14.0 coefficients
                 else
-                    # Position 4-5用の係数配列（12.0と14.0を追加）
+                    # Coefficient array for positions 4-5 (includes 12.0 and 14.0)
                     for base_coef in "${BASE_COEFS_ARR[@]}" "${HEAD_ADDITIONAL_COEFS_ARR[@]}"; do
                         total_experiments=$((total_experiments + 1))
                         # Include sign in coef_label to distinguish add vs subtract
@@ -532,6 +530,6 @@ if [ ${#failed_experiments[@]} -gt 0 ]; then
     exit 1
 else
     echo "" | tee -a $LOG_FILE
-    echo "🎉 All experiments completed successfully!" | tee -a $LOG_FILE
+    echo "All experiments completed successfully!" | tee -a $LOG_FILE
     exit 0
 fi

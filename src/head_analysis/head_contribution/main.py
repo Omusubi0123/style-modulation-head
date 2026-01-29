@@ -1,14 +1,14 @@
 """
-main.py - Head Contribution分析のエントリーポイント
+main.py - Entry point for Head Contribution analysis
 
-使用例:
-    # 単一traitの分析
+Usage:
+    # Single trait analysis
     python -m src.head_analysis.head_contribution.main analyze_trait \
         --model_name "Qwen/Qwen2.5-7B-Instruct" \
         --vector_dir "data/persona_vectors/Qwen/Qwen2.5-7B-Instruct" \
         --trait "evil"
 
-    # 特定層での複数trait比較
+    # Multi-trait comparison at specific layer
     python -m src.head_analysis.head_contribution.main compare_traits \
         --model_name "Qwen/Qwen2.5-7B-Instruct" \
         --vector_dir "data/persona_vectors/Qwen/Qwen2.5-7B-Instruct" \
@@ -46,27 +46,27 @@ def analyze_trait(
     use_log: bool = True,
     use_zscore: bool = True,
 ) -> np.ndarray:
-    """単一traitのHead Contributionを分析
+    """Analyze Head Contribution for a single trait
 
     Args:
-        model_name: モデル名
-        vector_dir: ベクトルディレクトリ
-        trait: 特性名
-        layers: 分析する層のリスト（Noneで全層）
-        output_dir: 出力ディレクトリ（Noneでvector_dir）
-        vector_type: ベクトルタイプ
-        use_log: 対数スケーリング
-        use_zscore: Z-score正規化
+        model_name: Model name
+        vector_dir: Vector directory
+        trait: Trait name
+        layers: List of layers to analyze (None for all layers)
+        output_dir: Output directory (None uses vector_dir)
+        vector_type: Vector type
+        use_log: Apply log scaling
+        use_zscore: Apply Z-score normalization
 
     Returns:
-        正規化された貢献度行列 [num_layers, num_heads]
+        Normalized contribution matrix [num_layers, num_heads]
     """
     if output_dir is None:
         output_dir = vector_dir
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # ベクトルを読み込む
+    # Load vectors
     attn_pre_o_proj_path = os.path.join(
         vector_dir, f"{trait}_{vector_type}_diff_attn_pre_o_proj.pt"
     )
@@ -82,13 +82,13 @@ def analyze_trait(
     attn_pre_o_proj = torch.load(attn_pre_o_proj_path, map_location="cpu")
     attn_output = torch.load(attn_output_path, map_location="cpu")
 
-    # Attention設定を読み込む
+    # Load attention config
     attn_config = load_attention_config(vector_dir, trait)
     if attn_config:
         num_heads = attn_config["num_attention_heads"]
         head_dim = attn_config["head_dim"]
     else:
-        # ベクトル形状から推測
+        # Infer from vector shape
         hidden_size = attn_pre_o_proj.shape[-1]
         for n_heads in [32, 28, 40, 24, 16, 12, 8]:
             if hidden_size % n_heads == 0:
@@ -105,10 +105,10 @@ def analyze_trait(
     if layers is None:
         layers = list(range(num_layers))
 
-    # O projection weightsを読み込む
+    # Load O projection weights
     o_proj_weights = load_o_proj_weights(model_name)
 
-    # 各層・各ヘッドの類似度を計算
+    # Compute similarity for each layer and head
     similarity_matrix = np.zeros((len(layers), num_heads))
 
     for i, layer_idx in enumerate(layers):
@@ -125,12 +125,12 @@ def analyze_trait(
         )
         similarity_matrix[i, :] = similarities
 
-    # 正規化
+    # Normalization
     normalized_matrix = normalize_matrix(
         similarity_matrix, use_log=use_log, use_zscore=use_zscore, axis=0
     )
 
-    # 可視化
+    # Visualization
     suffix = ""
     if not use_log:
         suffix += "_no_log"
@@ -148,10 +148,10 @@ def analyze_trait(
         output_path,
     )
 
-    # 上位ヘッドを表示
+    # Print top heads
     print_top_heads(normalized_matrix, layers, num_heads, raw_matrix=similarity_matrix)
 
-    # 行列を保存
+    # Save matrices
     np.save(output_path.replace(".png", ".npy"), normalized_matrix)
     np.save(output_path.replace(".png", "_raw.npy"), similarity_matrix)
 
@@ -168,20 +168,20 @@ def compare_traits(
     use_log: bool = True,
     use_zscore: bool = True,
 ) -> np.ndarray:
-    """複数traitを特定層で比較
+    """Compare multiple traits at a specific layer
 
     Args:
-        model_name: モデル名
-        vector_dir: ベクトルディレクトリ
-        traits: カンマ区切りのtrait名
-        layer: 層インデックス（0-based）
-        output_dir: 出力ディレクトリ
-        vector_type: ベクトルタイプ
-        use_log: 対数スケーリング
-        use_zscore: Z-score正規化
+        model_name: Model name
+        vector_dir: Vector directory
+        traits: Comma-separated trait names
+        layer: Layer index (0-based)
+        output_dir: Output directory
+        vector_type: Vector type
+        use_log: Apply log scaling
+        use_zscore: Apply Z-score normalization
 
     Returns:
-        正規化された貢献度行列 [num_traits, num_heads]
+        Normalized contribution matrix [num_traits, num_heads]
     """
     trait_list = [t.strip() for t in traits.split(",")]
 
@@ -190,7 +190,7 @@ def compare_traits(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # 最初のtraitからAttention設定を読み込む
+    # Load attention config from first trait
     attn_config = load_attention_config(vector_dir, trait_list[0])
     if attn_config is None:
         raise ValueError("Could not load attention config")
@@ -201,7 +201,7 @@ def compare_traits(
     print(f"Attention config: num_heads={num_heads}, head_dim={head_dim}")
     print(f"Analyzing layer {layer} for {len(trait_list)} traits")
 
-    # O projection weightsを読み込む
+    # Load O projection weights
     o_proj_weights = load_o_proj_weights(model_name)
 
     if layer not in o_proj_weights:
@@ -209,7 +209,7 @@ def compare_traits(
 
     o_proj_weight = o_proj_weights[layer]
 
-    # 各traitのヘッド貢献度を計算
+    # Compute head contributions for each trait
     similarity_matrix = np.zeros((len(trait_list), num_heads))
     valid_traits = []
 
@@ -245,16 +245,16 @@ def compare_traits(
     if not valid_traits:
         raise ValueError("No valid traits found")
 
-    # 有効なtraitのみに絞る
+    # Filter to valid traits only
     valid_indices = [i for i, t in enumerate(trait_list) if t in valid_traits]
     similarity_matrix = similarity_matrix[valid_indices, :]
 
-    # 正規化（traitごと = axis=0）
+    # Normalization (per trait = axis=0)
     normalized_matrix = normalize_matrix(
         similarity_matrix, use_log=use_log, use_zscore=use_zscore, axis=0
     )
 
-    # 可視化
+    # Visualization
     suffix = ""
     if not use_log:
         suffix += "_no_log"
@@ -272,11 +272,11 @@ def compare_traits(
         output_path,
     )
 
-    # 行列を保存
+    # Save matrices
     np.save(output_path.replace(".png", ".npy"), normalized_matrix)
     np.save(output_path.replace(".png", "_raw.npy"), similarity_matrix)
 
-    # 各ヘッドの平均貢献度を表示
+    # Print average contribution for each head
     print(f"\nTop 10 heads by average contribution (Layer {layer+1}):")
     head_means = normalized_matrix.mean(axis=0)
     top_heads = np.argsort(head_means)[::-1][:10]
@@ -291,4 +291,3 @@ if __name__ == "__main__":
         "analyze_trait": analyze_trait,
         "compare_traits": compare_traits,
     })
-

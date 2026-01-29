@@ -1,49 +1,65 @@
+"""
+split_scores_variances.py
+
+Transform wide-format CSV to long-format with separate columns for:
+- trait score (value) and its standard deviation
+- coherency score and its standard deviation
+"""
+
+import os
 import re
+
 import numpy as np
 import pandas as pd
-import os
 
 
 def split_scores_variances(
-    input_file = '/work/gc64/c64096/persona_vectors/backend/data/steering_position_plot/Qwen2.5-7B-Instruct/steering_position_comparison_qwen.csv',
-    output_file = '/work/gc64/c64096/persona_vectors/backend/data/steering_position_plot/Qwen2.5-7B-Instruct/steering_position_comparison_qwen_formatted.csv',
+    input_file: str = 'data/steering_position_plot/Qwen2.5-7B-Instruct/steering_position_comparison_qwen.csv',
+    output_file: str = 'data/steering_position_plot/Qwen2.5-7B-Instruct/steering_position_comparison_qwen_formatted.csv',
 ):
+    """
+    Transform wide-format CSV to long-format with extracted scores.
+    
+    Args:
+        input_file: Path to input CSV file (wide format)
+        output_file: Path to output CSV file (long format)
+    """
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
-    # === 1) CSVを読み込む ===
-    # ヘッダー行をそのまま読み込みます
+    # === 1) Load CSV ===
     df = pd.read_csv(input_file)
 
-    # === 2) 前処理: 空白セルの穴埋めと列名変更 ===
-    # 1列目と2列目は値が省略されている（Excelの結合セルのような）場合があるため、上の行から値をコピー(ffill)します
+    # === 2) Preprocessing: Fill empty cells and rename columns ===
+    # First two columns may have omitted values (like Excel merged cells), 
+    # so forward-fill from above
     df['Unnamed: 0'] = df['Unnamed: 0'].ffill()
     df['Unnamed: 1'] = df['Unnamed: 1'].ffill()
 
-    # わかりやすい列名に変更
+    # Rename to descriptive column names
     df = df.rename(columns={
         'Unnamed: 0': 'trait',
         'Unnamed: 1': 'module',
         'Unnamed: 2': 'steering_method'
     })
 
-    # === 3) 縦長形式(Long format)に変換 ===
-    # IDとして残す列
+    # === 3) Convert to long format ===
+    # Columns to keep as ID
     id_vars = ['trait', 'module', 'steering_method']
-    # 値が入っている列（0.5, 1, 1.5, ... など）
+    # Value columns (0.5, 1, 1.5, ... etc.)
     value_vars = [c for c in df.columns if c not in id_vars]
 
-    # meltで縦持ちに変換。変数名は 'multiplier' とします
+    # Melt to long format. Variable name is 'multiplier'
     df_melted = df.melt(id_vars=id_vars, value_vars=value_vars, var_name="multiplier", value_name="text")
 
-    # === 4) 値抽出用の関数 ===
+    # === 4) Value extraction function ===
     num_re = r"([-+]?\d+(?:\.\d+)?)"
-    # 正規表現: "key: value +- std" のパターン
+    # Regex pattern: "key: value +- std"
     general_pattern = re.compile(
         r"(\w+)\s*:\s*" + num_re + r"\s*\+\-\s*" + num_re, re.IGNORECASE
     )
 
     def parse_cell(cell):
-        """セル内の文字列から traitスコア と coherenceスコア を抽出する"""
+        """Extract trait score and coherency score from cell text."""
         if pd.isna(cell):
             return pd.Series([np.nan, np.nan, np.nan, np.nan])
         s = str(cell).strip()
@@ -64,7 +80,7 @@ def split_scores_variances(
                     coherence = val
                     coherence_std = std
                 else:
-                    # coherence 以外は trait のスコアとして扱う（evilなど）
+                    # Non-coherence values are treated as trait scores
                     value = val
                     value_std = std
         except Exception:
@@ -72,26 +88,26 @@ def split_scores_variances(
             
         return pd.Series([value, value_std, coherence, coherence_std])
 
-    # === 5) 抽出結果を追加 ===
+    # === 5) Apply extraction ===
     df_melted[["value", "value_std", "coherence", "coherence_std"]] = df_melted["text"].apply(parse_cell)
 
-    # === 6) 整形と保存 ===
-    # 元のテキスト列を削除
+    # === 6) Format and save ===
+    # Remove original text column
     df_final = df_melted.drop(columns=["text"])
 
-    # 解析結果がすべてNaNの行（元のCSVでデータがなかったセル）を削除
+    # Drop rows where all parsed values are NaN (cells with no data in original CSV)
     df_final = df_final.dropna(subset=["value", "coherence"], how='all')
 
-    # multiplier（0.5, 1, ...）を数値型に変換してソートしやすくする
+    # Convert multiplier to numeric for sorting
     df_final['multiplier'] = pd.to_numeric(df_final['multiplier'], errors='coerce')
 
-    # 見やすくソート
+    # Sort for readability
     df_final = df_final.sort_values(by=['trait', 'module', 'steering_method', 'multiplier'])
 
-    # CSV出力
+    # Output CSV
     df_final.to_csv(output_file, index=False)
 
-    print(f"✅ Done. Saved to {output_file}")
+    print(f"Done. Saved to {output_file}")
     print(df_final.head())
 
 

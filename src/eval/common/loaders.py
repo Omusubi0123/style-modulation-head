@@ -1,5 +1,5 @@
 """
-loaders.py - データ読み込みユーティリティ
+loaders.py - Data loading utilities
 """
 
 import json
@@ -11,7 +11,7 @@ from src.eval.common.utils import a_or_an
 
 
 def load_jsonl(path: str) -> List[dict]:
-    """JSONLファイルを読み込んで辞書のリストとして返す"""
+    """Load JSONL file and return as list of dictionaries"""
     with open(path, "r") as f:
         return [json.loads(line) for line in f.readlines() if line.strip()]
 
@@ -25,19 +25,19 @@ def load_persona_questions(
     eval_type: str = "0_100",
     version: str = "eval",
 ) -> List[Question]:
-    """ペルソナ評価用の質問リストを読み込み、Questionオブジェクトのリストを作成する
+    """Load persona evaluation questions and create Question object list
 
     Args:
-        trait: 評価する特性名
-        temperature: サンプリング温度（デフォルト: 1）
-        persona_instructions_type: ペルソナ指示タイプ（"pos", "neg", またはNone）
-        assistant_name: アシスタント名（オプション）
-        judge_model: 判定用モデル名（デフォルト: "gpt-4.1-mini-2025-04-14"）
-        eval_type: 評価タイプ（デフォルト: "0_100"）
-        version: データバージョン（デフォルト: "eval"）
+        trait: Trait name to evaluate
+        temperature: Sampling temperature (default: 1)
+        persona_instructions_type: Persona instruction type ("pos", "neg", or None)
+        assistant_name: Assistant name (optional)
+        judge_model: Judge model name (default: "gpt-4.1-mini-2025-04-14")
+        eval_type: Evaluation type (default: "0_100")
+        version: Data version (default: "eval")
 
     Returns:
-        Questionオブジェクトのリスト
+        List of Question objects
     """
     trait_data = json.load(
         open(f"data_generation/trait_data_{version}/{trait}.json", "r")
@@ -82,4 +82,3 @@ def load_persona_questions(
                 )
             )
     return questions
-

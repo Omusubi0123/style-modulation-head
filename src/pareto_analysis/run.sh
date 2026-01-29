@@ -10,7 +10,7 @@
 #
 # Usage:
 #   ./run.sh                           # Use default settings
-#   MODEL=llama TRAIT=evil ./run.sh    # Override model and trait
+#   model=llama TRAIT=evil ./run.sh    # Override model and trait
 
 set -e
 set -o pipefail
@@ -51,7 +51,6 @@ OUTPUT_DIR="${OUTPUT_DIR:-${DATA_DIR}/${MODEL}/plots_${TRAIT}}"
 # Temporary files
 TMP_DIR="${TMP_DIR:-logs/tmp}"
 TMP_CSV_FILE="${TMP_DIR}/${model}_${TRAIT}_raw.csv"
-TMP_FORMATTED_CSV_FILE="${TMP_DIR}/${model}_${TRAIT}_formatted.csv"
 
 # =============================================================================
 # Setup

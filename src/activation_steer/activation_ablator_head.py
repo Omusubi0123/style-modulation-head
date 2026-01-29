@@ -1,9 +1,9 @@
 """
-activation_ablator_head.py - 特定のAttentionヘッドをZero Ablationする
+activation_ablator_head.py - Zero ablation of specific attention heads
 
-Style HeadのZero Ablation実験用：
-特定の層の特定のヘッドのO projection前の出力部分をゼロにして、
-そのヘッドの寄与を除去する。
+For Style Head zero ablation experiments:
+Zero out the O projection input of specific heads at specific layers
+to remove their contribution.
 """
 
 from typing import List, Sequence
@@ -14,10 +14,10 @@ from src.activation_steer.base.modifier import BaseActivationModifier
 
 
 class ActivationAblatorHead(BaseActivationModifier):
-    """特定のAttentionヘッドのO projection前の出力をゼロにする（Zero Ablation）
+    """Zero out the O projection input of specific attention heads (Zero Ablation)
 
-    Attention内部のattn_weights @ Vの結果（O projection前）に対して、
-    特定のヘッドの次元をゼロにすることで、そのヘッドの寄与を除去する。
+    Zero out specific head dimensions of the attn_weights @ V result
+    (before O projection) to remove that head's contribution.
     """
 
     def __init__(
@@ -29,19 +29,19 @@ class ActivationAblatorHead(BaseActivationModifier):
         positions: str = "all",
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            layer_idx: 対象レイヤーのインデックス（0-based）
-            head_indices: アブレーション対象のヘッドインデックスのリスト（0-based）
-            positions: 反映位置（"all"|"prompt"|"response"）
-            debug: デバッグ出力を有効化
+            model: Target model
+            layer_idx: Target layer index (0-based)
+            head_indices: List of head indices to ablate (0-based)
+            positions: Application position ("all"|"prompt"|"response")
+            debug: Enable debug output
         """
         super().__init__(model, layer_idx=layer_idx, positions=positions, debug=debug)
         self.head_indices = head_indices if head_indices is not None else []
 
-        # Attention設定を取得
+        # Get attention configuration
         attn_config = self._get_attention_config()
         self.num_heads = attn_config["num_attention_heads"]
         self.head_dim = attn_config["head_dim"]
@@ -54,7 +54,7 @@ class ActivationAblatorHead(BaseActivationModifier):
                     f"head_index {h_idx} out of range [0, {self.num_heads})"
                 )
 
-        # 指定されたヘッドの次元をゼロにするマスクを作成（1=保持、0=ゼロ化）
+        # Create mask to zero out specified head dimensions (1=keep, 0=zero)
         p = next(model.parameters())
         self.head_mask = torch.ones(self.hidden_size, dtype=p.dtype, device=p.device)
         for h_idx in self.head_indices:
@@ -69,7 +69,7 @@ class ActivationAblatorHead(BaseActivationModifier):
             print(f"[ActivationAblatorHead] layer_idx: {self.layer_idx}")
 
     def _locate_o_proj(self) -> torch.nn.Module:
-        """対象レイヤーのo_projモジュールを特定する"""
+        """Locate the o_proj module for the target layer"""
         layer = self._get_layer()
         attn_block = self._find_attention_block(layer)
 
@@ -88,12 +88,12 @@ class ActivationAblatorHead(BaseActivationModifier):
         return o_proj
 
     def _register_hooks(self) -> None:
-        """フックを登録"""
+        """Register hooks"""
         o_proj = self._locate_o_proj()
         self._handle = o_proj.register_forward_pre_hook(self._hook_fn)
 
     def _hook_fn(self, module, input):
-        """pre_hookフック：o_projへの入力に対して指定ヘッドをゼロ化する"""
+        """Pre-hook: zero out specified heads on o_proj input"""
         mask = self.head_mask
 
         def _apply_zero_ablation(t):
@@ -121,7 +121,7 @@ class ActivationAblatorHead(BaseActivationModifier):
 
 
 class ActivationAblatorHeadMultiple:
-    """複数のヘッドアブレーションを異なるレイヤーに同時適用する"""
+    """Apply multiple head ablations to different layers simultaneously"""
 
     def __init__(
         self,
@@ -130,16 +130,16 @@ class ActivationAblatorHeadMultiple:
         *,
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            instructions: アブレーション指示のリスト
-                各dictは以下のキーを持つ:
-                - layer_idx: レイヤーインデックス（オプション、デフォルト: -1）
-                - head_indices: ヘッドインデックスのリスト（オプション）
-                - positions: 反映位置（オプション、デフォルト: "all"）
-            debug: デバッグ出力を有効化
+            model: Target model
+            instructions: List of ablation instructions
+                Each dict has the following keys:
+                - layer_idx: Layer index (optional, default: -1)
+                - head_indices: List of head indices (optional)
+                - positions: Application position (optional, default: "all")
+            debug: Enable debug output
         """
         self.model = model
         self.instructions = instructions
@@ -157,17 +157,17 @@ class ActivationAblatorHeadMultiple:
             self._ablators.append(ablator)
 
     def __enter__(self):
-        """全アブレーターにフック登録"""
+        """Register hooks for all ablators"""
         for ablator in self._ablators:
             ablator._register_hooks()
         return self
 
     def __exit__(self, *exc):
-        """すべてのフックを解除"""
+        """Remove all hooks"""
         self.remove()
 
     def remove(self):
-        """すべての登録済みフックを解除"""
+        """Remove all registered hooks"""
         for ablator in self._ablators:
             ablator.remove()
 
@@ -177,7 +177,7 @@ def create_head_ablation_instructions(
     head_indices: List[int],
     positions: str = "all",
 ) -> dict:
-    """ヘッドアブレーションの指示を作成するヘルパー関数"""
+    """Helper function to create head ablation instructions"""
     return {
         "layer_idx": layer_idx,
         "head_indices": head_indices,
@@ -186,18 +186,18 @@ def create_head_ablation_instructions(
 
 
 def load_style_heads_from_csv(csv_path: str) -> List[dict]:
-    """CSVファイルからStyle Head情報を読み込む
+    """Load style head information from CSV file
 
-    CSVフォーマット:
+    CSV format:
     layer,cor_head,anti_head
     20,"3,5,28","1,27"
     ...
 
     Args:
-        csv_path: CSVファイルのパス
+        csv_path: Path to CSV file
 
     Returns:
-        Style Head情報のリスト。各要素は:
+        List of style head information. Each element is:
         {
             "layer": int (0-based index),
             "cor_heads": List[int] (0-based indices),
@@ -211,11 +211,11 @@ def load_style_heads_from_csv(csv_path: str) -> List[dict]:
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # layerは1-indexなので0-indexに変換
+            # layer is 1-indexed, convert to 0-indexed
             layer_1based = int(row["layer"])
             layer_0based = layer_1based - 1
 
-            # ヘッドインデックスをパース（1-indexなので0-indexに変換）
+            # Parse head indices (1-indexed, convert to 0-indexed)
             cor_heads = []
             if row["cor_head"].strip():
                 cor_heads = [int(h.strip()) - 1 for h in row["cor_head"].split(",")]

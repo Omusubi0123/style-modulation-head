@@ -1,7 +1,7 @@
 """
-base - Activation modification用の基底クラス群
+base - Base classes for activation modification
 
-直接importする場合:
+For direct imports:
     from src.activation_steer.base.modifier import BaseActivationModifier
     from src.activation_steer.base.steerer import BaseActivationSteerer
     from src.activation_steer.base.ablator import BaseActivationAblator
@@ -16,4 +16,3 @@ __all__ = [
     "BaseActivationSteerer",
     "BaseActivationAblator",
 ]
-

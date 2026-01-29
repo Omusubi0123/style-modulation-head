@@ -1,13 +1,13 @@
 """
-compute.py - Head Contribution計算ロジック
+compute.py - Head Contribution computation logic
 
-各Attentionヘッドの貢献度を計算する。
-実験設定:
-1. OV計算前のVのPersona Vector（attn_pre_o_proj）を読み込む
-2. 各ヘッドごとにO projectionを計算（他のヘッドは0固定）
-3. attn_outputのPersona Vectorとの内積類似度を計算
-4. 対数スケーリング (s' = sign(s) * log(1 + |s|)) を適用
-5. 層ごと/traitごとにZ-score正規化を適用
+Computes the contribution of each attention head.
+Experiment setup:
+1. Load Persona Vector of V before OV computation (attn_pre_o_proj)
+2. Compute O projection for each head (other heads set to 0)
+3. Compute inner product similarity with attn_output Persona Vector
+4. Apply log scaling (s' = sign(s) * log(1 + |s|))
+5. Apply Z-score normalization per layer/trait
 """
 
 import os
@@ -23,18 +23,18 @@ config = setup_credentials()
 
 
 def inner_product_similarity(vec1: torch.Tensor, vec2: torch.Tensor) -> torch.Tensor:
-    """内積類似度を計算"""
+    """Compute inner product similarity"""
     vec1 = vec1.float()
     vec2 = vec2.float()
     return torch.dot(vec1, vec2)
 
 
 def load_o_proj_weights(model_name: str, device: str = "cpu") -> Dict[int, torch.Tensor]:
-    """モデルからO projection weightsを読み込む
+    """Load O projection weights from model
 
     Args:
-        model_name: モデル名
-        device: 計算デバイス
+        model_name: Model name
+        device: Computation device
 
     Returns:
         {layer_idx: o_proj_weight tensor}
@@ -63,7 +63,7 @@ def load_o_proj_weights(model_name: str, device: str = "cpu") -> Dict[int, torch
         else:
             raise
 
-    # レイヤーリストを取得
+    # Find layer list
     possible_attrs = [
         "transformer.h",
         "encoder.layer",
@@ -93,7 +93,7 @@ def load_o_proj_weights(model_name: str, device: str = "cpu") -> Dict[int, torch
 
     o_proj_weights = {}
     for layer_idx, layer in enumerate(layer_list):
-        # Attention blockを探す
+        # Find attention block
         attn_attrs = ["self_attn", "attention", "attn"]
         attn_block = None
         for attr in attn_attrs:
@@ -104,7 +104,7 @@ def load_o_proj_weights(model_name: str, device: str = "cpu") -> Dict[int, torch
         if attn_block is None:
             continue
 
-        # o_projを探す
+        # Find o_proj
         o_proj_attrs = ["o_proj", "out_proj", "dense"]
         o_proj = None
         for attr in o_proj_attrs:
@@ -115,7 +115,7 @@ def load_o_proj_weights(model_name: str, device: str = "cpu") -> Dict[int, torch
         if o_proj is not None:
             o_proj_weights[layer_idx] = o_proj.weight.data.clone().float()
 
-    # モデルを解放
+    # Release model
     del model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -130,31 +130,31 @@ def compute_head_contributions(
     num_heads: int,
     head_dim: int,
 ) -> List[float]:
-    """各ヘッドのO projection後の出力とattn_outputの内積類似度を計算
+    """Compute inner product similarity between each head's O projection output and attn_output
 
     Args:
-        attn_pre_o_proj_vec: O projection前のPersona Vector [hidden_size]
-        attn_output_vec: Attention出力のPersona Vector [hidden_size]
+        attn_pre_o_proj_vec: Persona Vector before O projection [hidden_size]
+        attn_output_vec: Attention output Persona Vector [hidden_size]
         o_proj_weight: O projection weight [hidden_size, hidden_size]
-        num_heads: Attentionヘッド数
-        head_dim: 各ヘッドの次元
+        num_heads: Number of attention heads
+        head_dim: Dimension of each head
 
     Returns:
-        各ヘッドの内積類似度のリスト
+        List of inner product similarities for each head
     """
     similarities = []
 
     for head_idx in range(num_heads):
-        # 該当ヘッド以外を0にしたベクトルを作成
+        # Create vector with only the target head non-zero
         masked_vec = torch.zeros_like(attn_pre_o_proj_vec)
         start_idx = head_idx * head_dim
         end_idx = (head_idx + 1) * head_dim
         masked_vec[start_idx:end_idx] = attn_pre_o_proj_vec[start_idx:end_idx]
 
-        # O projectionを適用
+        # Apply O projection
         projected_vec = torch.matmul(o_proj_weight, masked_vec)
 
-        # 内積類似度を計算
+        # Compute inner product similarity
         sim = inner_product_similarity(projected_vec, attn_output_vec)
         similarities.append(sim.item())
 
@@ -162,11 +162,11 @@ def compute_head_contributions(
 
 
 def load_attention_config(vector_dir: str, trait: str) -> Dict:
-    """Attention設定を読み込む
+    """Load attention configuration
 
     Args:
-        vector_dir: ベクトルディレクトリ
-        trait: 特性名
+        vector_dir: Vector directory
+        trait: Trait name
 
     Returns:
         {num_attention_heads, head_dim, ...}
@@ -190,24 +190,24 @@ def normalize_matrix(
     use_zscore: bool = True,
     axis: int = 0,
 ) -> np.ndarray:
-    """行列を正規化する
+    """Normalize matrix
 
     Args:
-        matrix: 入力行列
-        use_log: 対数スケーリングを適用するか
-        use_zscore: Z-score正規化を適用するか
-        axis: 正規化の軸（0=行ごと、1=列ごと）
+        matrix: Input matrix
+        use_log: Whether to apply log scaling
+        use_zscore: Whether to apply Z-score normalization
+        axis: Normalization axis (0=per row, 1=per column)
 
     Returns:
-        正規化された行列
+        Normalized matrix
     """
     result = matrix.copy()
 
-    # 対数スケーリング: s' = sign(s) * log(1 + |s|)
+    # Log scaling: s' = sign(s) * log(1 + |s|)
     if use_log:
         result = np.sign(result) * np.log1p(np.abs(result))
 
-    # Z-score正規化
+    # Z-score normalization
     if use_zscore:
         normalized = np.zeros_like(result)
         for i in range(result.shape[axis]):
@@ -231,4 +231,3 @@ def normalize_matrix(
         result = normalized
 
     return result
-

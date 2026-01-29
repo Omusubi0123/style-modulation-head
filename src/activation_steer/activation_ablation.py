@@ -1,7 +1,7 @@
 """
-activation_ablation.py - Persona Vector方向成分の除去（アブレーション）
+activation_ablation.py - Removal of persona vector direction components (ablation)
 
-特定の層のattn/mlp出力からPersona Vector方向の成分を除去する。
+Remove persona vector direction components from specific layer's attn/mlp output.
 ablated_output = output - (output · unit_persona_vector) * unit_persona_vector
 """
 
@@ -13,10 +13,10 @@ from src.activation_steer.base.ablator import BaseActivationAblator
 
 
 class ActivationAblator(BaseActivationAblator):
-    """特定のblock出力からPersona Vector方向の成分を除去する（アブレーション）
+    """Remove persona vector direction components from specific block output (ablation)
 
-    指定した層のattnまたはmlp出力から、Persona Vectorの方向成分を除去することで、
-    そのペルソナ特性の寄与を除去する。
+    Remove the persona vector direction component from attn or mlp output
+    at the specified layer to eliminate that persona's contribution.
     """
 
     VALID_ABLATION_TYPES = {"attn_output", "mlp_output"}
@@ -31,15 +31,15 @@ class ActivationAblator(BaseActivationAblator):
         positions: str = "all",
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            persona_vector: Persona Vector（この方向成分を除去）
-            layer_idx: 対象レイヤーのインデックス（0-based、デフォルト: -1）
-            ablation_type: アブレーションタイプ（"attn_output"|"mlp_output"）
-            positions: 反映位置（"all"|"prompt"|"response"）
-            debug: デバッグ出力を有効化
+            model: Target model
+            persona_vector: Persona vector (direction to be removed)
+            layer_idx: Target layer index (0-based, default: -1)
+            ablation_type: Ablation type ("attn_output"|"mlp_output")
+            positions: Application position ("all"|"prompt"|"response")
+            debug: Enable debug output
         """
         super().__init__(
             model,
@@ -56,7 +56,7 @@ class ActivationAblator(BaseActivationAblator):
             )
 
     def _locate_target_module(self) -> torch.nn.Module:
-        """アブレーションタイプに応じて対象モジュールを特定する"""
+        """Identify target module based on ablation type"""
         layer = self._get_layer()
 
         if self.ablation_type == "attn_output":
@@ -73,7 +73,7 @@ class ActivationAblator(BaseActivationAblator):
         )
 
     def _register_hooks(self) -> None:
-        """フックを登録"""
+        """Register hooks"""
         target_module = self._locate_target_module()
         self._handle = target_module.register_forward_hook(self._hook_fn)
         if self.debug:
@@ -83,7 +83,7 @@ class ActivationAblator(BaseActivationAblator):
             )
 
     def _hook_fn(self, module, ins, out):
-        """forwardフック：出力テンソルからPersona Vector方向の成分を除去"""
+        """Forward hook: remove persona vector direction from output tensor"""
         if torch.is_tensor(out):
             new_out = self._remove_persona_direction(out)
         elif isinstance(out, (tuple, list)):
@@ -107,7 +107,7 @@ class ActivationAblator(BaseActivationAblator):
 
 
 class ActivationAblatorMultiple:
-    """複数のアブレーションを異なるレイヤーに同時適用する"""
+    """Apply multiple ablations to different layers simultaneously"""
 
     def __init__(
         self,
@@ -116,17 +116,17 @@ class ActivationAblatorMultiple:
         *,
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            instructions: アブレーション指示のリスト
-                各dictは以下のキーを持つ:
-                - persona_vector: Persona Vector
-                - layer_idx: 対象レイヤーのインデックス
-                - ablation_type: "attn_output" または "mlp_output"
-                - positions: "all", "prompt", "response"（オプション）
-            debug: デバッグ出力を有効化
+            model: Target model
+            instructions: List of ablation instructions
+                Each dict has the following keys:
+                - persona_vector: Persona vector
+                - layer_idx: Target layer index
+                - ablation_type: "attn_output" or "mlp_output"
+                - positions: "all", "prompt", "response" (optional)
+            debug: Enable debug output
         """
         self.model = model
         self.instructions = instructions
@@ -145,16 +145,16 @@ class ActivationAblatorMultiple:
             self._ablators.append(ablator)
 
     def __enter__(self):
-        """全アブレーターにフック登録"""
+        """Register hooks for all ablators"""
         for ablator in self._ablators:
             ablator._register_hooks()
         return self
 
     def __exit__(self, *exc):
-        """すべてのフックを解除"""
+        """Remove all hooks"""
         self.remove()
 
     def remove(self):
-        """すべての登録済みフックを解除"""
+        """Remove all registered hooks"""
         for ablator in self._ablators:
             ablator.remove()

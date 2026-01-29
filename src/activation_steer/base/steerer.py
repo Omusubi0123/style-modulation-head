@@ -1,5 +1,5 @@
 """
-steerer.py - Steeringベクトルを加算するための基底クラス
+steerer.py - Base class for adding steering vectors
 """
 
 from typing import Sequence, Union
@@ -10,7 +10,7 @@ from src.activation_steer.base.modifier import BaseActivationModifier
 
 
 class BaseActivationSteerer(BaseActivationModifier):
-    """Steeringベクトルを加算するための基底クラス"""
+    """Base class for adding steering vectors"""
 
     def __init__(
         self,
@@ -23,16 +23,16 @@ class BaseActivationSteerer(BaseActivationModifier):
         renorm_to_original_norm: bool = False,
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            steering_vector: ステアリングベクトル（1次元）
-            coeff: 係数（デフォルト: 1.0）
-            layer_idx: 対象レイヤーのインデックス（0-based、デフォルト: -1）
-            positions: 反映位置（"all"|"prompt"|"response"）
-            renorm_to_original_norm: ステアリング後にノルムを元に戻すか
-            debug: デバッグ出力を有効化
+            model: Target model
+            steering_vector: Steering vector (1-dimensional)
+            coeff: Coefficient (default: 1.0)
+            layer_idx: Target layer index (0-based, default: -1)
+            positions: Application position ("all"|"prompt"|"response")
+            renorm_to_original_norm: Whether to restore norm after steering
+            debug: Enable debug output
         """
         super().__init__(model, layer_idx=layer_idx, positions=positions, debug=debug)
         self.coeff = float(coeff)
@@ -51,13 +51,13 @@ class BaseActivationSteerer(BaseActivationModifier):
             )
 
     def _apply_steering(self, t: torch.Tensor) -> torch.Tensor:
-        """テンソルにステアリングを適用する
+        """Apply steering to tensor
 
         Args:
-            t: 入力テンソル [batch, seq_len, hidden]
+            t: Input tensor [batch, seq_len, hidden]
 
         Returns:
-            ステアリング適用後のテンソル
+            Tensor after steering
         """
         steer = self.coeff * self.vector
 
@@ -97,4 +97,3 @@ class BaseActivationSteerer(BaseActivationModifier):
 
         else:
             raise ValueError(f"Invalid positions: {self.positions}")
-

@@ -1,17 +1,17 @@
 """
-activation_steer - Activation Steering/Ablation用モジュール
+activation_steer - Module for activation steering/ablation
 
-モデルの特定レイヤーに対してステアリングベクトルを加算したり、
-特定方向の成分を除去したりする機能を提供する。
+Provides functionality to add steering vectors to specific model layers
+or remove specific direction components.
 
-使用例（直接import推奨）:
+Usage (direct import recommended):
     from src.activation_steer.activation_steer import ActivationSteerer
     from src.activation_steer.activation_steer import ActivationSteererBlock
     from src.activation_steer.activation_steer_head import ActivationSteererHead
     from src.activation_steer.base.modifier import BaseActivationModifier
 """
 
-# 後方互換性のためのエクスポート
+# Exports for backward compatibility
 from src.activation_steer.activation_ablation import (
     ActivationAblator,
     ActivationAblatorMultiple,

@@ -1,8 +1,8 @@
 """
-sampling.py - ステアリングを使用したサンプリングユーティリティ
+sampling.py - Sampling utilities with steering
 
-モデルの応答生成のための共通サンプリング機能を提供する。
-ActivationSteerer系のクラスを直接使用する。
+Provides common sampling functionality for model response generation.
+Uses ActivationSteerer classes directly.
 """
 
 from typing import List, Tuple
@@ -28,19 +28,19 @@ def sample_vllm(
     temperature: float = 1,
     min_tokens: int = 1,
 ) -> Tuple[List[str], List[str]]:
-    """VLLMを使用した通常のサンプリングでモデルの応答を生成する
+    """Generate model responses using standard VLLM sampling
 
     Args:
-        model: VLLMモデル
-        tokenizer: トークナイザー
-        conversations: 会話データのリスト
-        top_p: nucleus samplingパラメータ（デフォルト: 1）
-        max_tokens: 最大生成トークン数（デフォルト: 1000）
-        temperature: サンプリング温度（デフォルト: 1）
-        min_tokens: 最小生成トークン数（デフォルト: 1）
+        model: VLLM model
+        tokenizer: Tokenizer
+        conversations: List of conversation data
+        top_p: Nucleus sampling parameter (default: 1)
+        max_tokens: Maximum generation tokens (default: 1000)
+        temperature: Sampling temperature (default: 1)
+        min_tokens: Minimum generation tokens (default: 1)
 
     Returns:
-        tuple: (プロンプトリスト, 応答リスト)
+        tuple: (list of prompts, list of responses)
     """
     sampling_params = SamplingParams(
         temperature=temperature,
@@ -79,33 +79,33 @@ def sample_with_steering(
     steering_type: str = "response",
     renorm_after_steering: bool = False,
 ) -> Tuple[List[str], List[str]]:
-    """ステアリングベクトルを使用してモデルの応答を生成する
+    """Generate model responses using steering vector
 
     Args:
-        model: 使用する言語モデル（Transformers）
-        tokenizer: トークナイザー
-        conversations: 会話データのリスト
-        vector: ステアリングベクトル
-        layer: 適用するレイヤー番号（0-based index）
-        coef: ステアリング係数
-        bs: バッチサイズ（デフォルト: 100）
-        top_p: nucleus samplingパラメータ（デフォルト: 1）
-        max_tokens: 最大生成トークン数（デフォルト: 1000）
-        temperature: サンプリング温度（デフォルト: 1）
-        min_tokens: 最小生成トークン数（デフォルト: 1）
-        steering_type: ステアリングタイプ（"response", "prompt", "all"）
-        renorm_after_steering: ステアリング後にノルムをリノームするか
+        model: Language model (Transformers)
+        tokenizer: Tokenizer
+        conversations: List of conversation data
+        vector: Steering vector
+        layer: Layer number to apply (0-based index)
+        coef: Steering coefficient
+        bs: Batch size (default: 100)
+        top_p: Nucleus sampling parameter (default: 1)
+        max_tokens: Maximum generation tokens (default: 1000)
+        temperature: Sampling temperature (default: 1)
+        min_tokens: Minimum generation tokens (default: 1)
+        steering_type: Steering type ("response", "prompt", "all")
+        renorm_after_steering: Whether to renormalize after steering
 
     Returns:
-        tuple: (プロンプトリスト, 応答リスト)
+        tuple: (list of prompts, list of responses)
     """
-    # トークナイザーの設定
+    # Configure tokenizer
     tokenizer.padding_side = "left"
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
 
-    # プロンプトを準備
+    # Prepare prompts
     prompts = []
     for messages in conversations:
         text = apply_chat_template_safe(
@@ -166,32 +166,32 @@ def sample_with_block_steering(
     steering_type: str = "response",
     renorm_after_steering: bool = False,
 ) -> Tuple[List[str], List[str]]:
-    """Block位置へのステアリングベクトルを使用してモデルの応答を生成する
+    """Generate model responses using block position steering vector
 
     Args:
-        model: 使用する言語モデル（Transformers）
-        tokenizer: トークナイザー
-        conversations: 会話データのリスト
-        vector: ステアリングベクトル
-        layer: 適用するレイヤー番号（0-based index）
-        coef: ステアリング係数
-        block_steering_type: ブロックステアリングタイプ
-            - "attn": attention blockへの入力
-            - "mlp": MLP blockへの入力
-            - "attn_layernorm": attention前のlayer normへの入力
-            - "mlp_layernorm": MLP前のlayer normへの入力
-            - "attn_output": attention blockの出力
-            - "mlp_output": MLP blockの出力
-        bs: バッチサイズ
-        top_p: nucleus samplingパラメータ
-        max_tokens: 最大生成トークン数
-        temperature: サンプリング温度
-        min_tokens: 最小生成トークン数
-        steering_type: 位置ステアリングタイプ（"response", "prompt", "all"）
-        renorm_after_steering: ステアリング後にノルムをリノームするか
+        model: Language model (Transformers)
+        tokenizer: Tokenizer
+        conversations: List of conversation data
+        vector: Steering vector
+        layer: Layer number to apply (0-based index)
+        coef: Steering coefficient
+        block_steering_type: Block steering type
+            - "attn": Input to attention block
+            - "mlp": Input to MLP block
+            - "attn_layernorm": Input to layer norm before attention
+            - "mlp_layernorm": Input to layer norm before MLP
+            - "attn_output": Output of attention block
+            - "mlp_output": Output of MLP block
+        bs: Batch size
+        top_p: Nucleus sampling parameter
+        max_tokens: Maximum generation tokens
+        temperature: Sampling temperature
+        min_tokens: Minimum generation tokens
+        steering_type: Position steering type ("response", "prompt", "all")
+        renorm_after_steering: Whether to renormalize after steering
 
     Returns:
-        tuple: (プロンプトリスト, 応答リスト)
+        tuple: (list of prompts, list of responses)
     """
     tokenizer.padding_side = "left"
     if tokenizer.pad_token is None:
@@ -258,25 +258,25 @@ def sample_with_head_steering(
     min_tokens: int = 1,
     steering_type: str = "response",
 ) -> Tuple[List[str], List[str]]:
-    """ヘッド単位のステアリングベクトルを使用してモデルの応答を生成する
+    """Generate model responses using head-level steering vector
 
     Args:
-        model: 使用する言語モデル（Transformers）
-        tokenizer: トークナイザー
-        conversations: 会話データのリスト
-        vector: ステアリングベクトル
-        layer: 適用するレイヤー番号（0-based index）
-        head_indices: ステアリング対象のヘッドインデックスのリスト
-        coef: ステアリング係数
-        bs: バッチサイズ
-        top_p: nucleus samplingパラメータ
-        max_tokens: 最大生成トークン数
-        temperature: サンプリング温度
-        min_tokens: 最小生成トークン数
-        steering_type: ステアリングタイプ（"response", "prompt", "all"）
+        model: Language model (Transformers)
+        tokenizer: Tokenizer
+        conversations: List of conversation data
+        vector: Steering vector
+        layer: Layer number to apply (0-based index)
+        head_indices: List of head indices to steer
+        coef: Steering coefficient
+        bs: Batch size
+        top_p: Nucleus sampling parameter
+        max_tokens: Maximum generation tokens
+        temperature: Sampling temperature
+        min_tokens: Minimum generation tokens
+        steering_type: Steering type ("response", "prompt", "all")
 
     Returns:
-        tuple: (プロンプトリスト, 応答リスト)
+        tuple: (list of prompts, list of responses)
     """
     tokenizer.padding_side = "left"
     if tokenizer.pad_token is None:
@@ -325,4 +325,3 @@ def sample_with_head_steering(
         outputs.extend(batch_outputs)
 
     return prompts, outputs
-

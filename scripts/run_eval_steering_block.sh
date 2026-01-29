@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# run_eval_steering_block.sh - Block位置別のステアリング評価
+# run_eval_steering_block.sh - Block position steering evaluation
 #
-# 使い方:
+# Usage:
 #   ./scripts/run_eval_steering_block.sh <model> <trait1> [trait2 ...]
 #
-# 例:
+# Example:
 #   ./scripts/run_eval_steering_block.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
 
 set -o pipefail
@@ -68,10 +68,10 @@ for trait in "${TRAITS[@]}"; do
                 else
                     completed=$((completed + 1))
                 fi
-                log "✓ Completed: $trait $block_type layer$layer"
+                log "Completed: $trait $block_type layer$layer"
             else
                 failed+=("$trait-$block_type-layer$layer")
-                log "✗ Failed: $trait $block_type layer$layer"
+                log "Failed: $trait $block_type layer$layer"
             fi
             log_separator
         done
@@ -82,4 +82,3 @@ done
 print_summary "$total" "$completed" "$skipped" "${#failed[@]}" "${failed[@]}"
 
 [[ ${#failed[@]} -eq 0 ]] && exit 0 || exit 1
-

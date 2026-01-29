@@ -1,3 +1,7 @@
+"""
+openai_judge.py - OpenAI-based evaluation judge
+"""
+
 import asyncio
 import math
 
@@ -11,21 +15,21 @@ openai = AsyncOpenAI()
 
 
 class OpenAiJudge:
-    """OpenAIモデルを使用した評価判定クラス
+    """Evaluation judge class using OpenAI models
 
-    OpenAIモデルは0-100の数値を単一トークンとしてトークン化するため、
-    logprobsを使って正確に1つの完了トークンを取得できる。
-    他のモデルは必ずしもこのような動作をしないため、判定に使用する際は
-    異なる処理が必要。
+    OpenAI models tokenize 0-100 numbers as single tokens, so we can
+    use logprobs to accurately get exactly one completion token.
+    Other models may not behave this way, requiring different processing
+    when used for evaluation.
     """
 
     def __init__(self, model: str, prompt_template: str, eval_type: str = "0_100"):
-        """OpenAiJudgeクラスの初期化
+        """Initialize OpenAiJudge class
 
         Args:
-            model (str): 使用するOpenAIモデル名
-            prompt_template (str): 評価用のプロンプトテンプレート
-            eval_type (str): 評価タイプ（"0_100", "0_10", "binary", "binary_text"）
+            model (str): OpenAI model name to use
+            prompt_template (str): Prompt template for evaluation
+            eval_type (str): Evaluation type ("0_100", "0_10", "binary", "binary_text")
         """
         self.model = model
         assert eval_type in [
@@ -50,13 +54,13 @@ class OpenAiJudge:
         self.prompt_template = prompt_template
 
     async def judge(self, **kwargs):
-        """質問と回答に基づいて評価スコアを算出する
+        """Calculate evaluation score based on question and answer
 
         Args:
-            **kwargs: プロンプトテンプレートのフォーマット用キーワード引数
+            **kwargs: Keyword arguments for prompt template formatting
 
         Returns:
-            float or None: 評価スコア（拒否の場合はNone）
+            float or None: Evaluation score (None for refusal)
         """
         messages = [dict(role="user", content=self.prompt_template.format(**kwargs))]
         if self.eval_type == "binary_text":
@@ -72,16 +76,15 @@ class OpenAiJudge:
         return score
 
     async def logprob_probs(self, messages) -> dict:
-        """ログ確率を取得して確率辞書を返す（単純なlogprobsリクエスト）
+        """Get log probabilities and return probability dictionary (simple logprobs request)
 
-        常に1トークンをサンプリングし、レート制限エラーに対する
-        自動リトライ機能を含む。
+        Always samples 1 token and includes automatic retry for rate limit errors.
 
         Args:
-            messages (list): チャット形式のメッセージリスト
+            messages (list): Chat format message list
 
         Returns:
-            dict: トークンと確率のマッピング辞書
+            dict: Token to probability mapping dictionary
         """
         max_retries = 5
         base_delay = 1.0
@@ -146,16 +149,16 @@ class OpenAiJudge:
         return {}
 
     async def query_full_text(self, messages) -> str:
-        """完全なテキスト補完をリクエストする
+        """Request full text completion
 
-        binary_text評価タイプで使用され、レート制限エラーに対する
-        自動リトライ機能を含む。
+        Used for binary_text evaluation type and includes automatic retry
+        for rate limit errors.
 
         Args:
-            messages (list): チャット形式のメッセージリスト
+            messages (list): Chat format message list
 
         Returns:
-            str: 生成されたテキスト応答
+            str: Generated text response
         """
         max_retries = 5
         base_delay = 1.0
@@ -195,19 +198,19 @@ class OpenAiJudge:
         return ""
 
     def _aggregate_0_100_score(self, score: dict) -> float:
-        """0-100スケールのスコアを集約する
+        """Aggregate scores on 0-100 scale
 
-        拒否を明示的にチェックせず、数値の総重みが0.25以上であれば
-        拒否ではないと仮定する。
+        Does not explicitly check for refusals. Assumes it's not a refusal
+        if total weight on numbers is at least 0.25.
 
         Args:
-            score (dict): トークンと確率のマッピング
+            score (dict): Token to probability mapping
 
         Returns:
-            float or None: 集約されたスコア（拒否の場合はNone）
+            float or None: Aggregated score (None for refusal)
         """
-        #   NOTE: we don't check for refusals explcitly. Instead we assume that
-        #   if there's at least 0.25 total weight on numbers, it's not a refusal.
+        # NOTE: we don't check for refusals explicitly. Instead we assume that
+        # if there's at least 0.25 total weight on numbers, it's not a refusal.
         total = 0
         sum_ = 0
         for key, val in score.items():
@@ -226,20 +229,20 @@ class OpenAiJudge:
         return sum_ / total
 
     def _aggregate_0_10_score(self, score: dict) -> float:
-        """0-10スケールのスコアを集約する
+        """Aggregate scores on 0-10 scale
 
-        拒否を明示的にチェックし、"REFUSAL"が最高確率の場合はNoneを返す。
-        そうでなければ0-9のスコアを集約する。
+        Explicitly checks for refusals. Returns None if "REFUSAL" has highest probability.
+        Otherwise aggregates scores from 0-9.
 
         Args:
-            score (dict): トークンと確率のマッピング
+            score (dict): Token to probability mapping
 
         Returns:
-            float or None: 集約されたスコア（拒否の場合はNone）
+            float or None: Aggregated score (None for refusal)
         """
-        #   NOTE: we check for refusals explcitly.
-        #   If "REFUSAL" has the highest probability, we return None.
-        #   Otherwise, we aggregate scores from 0-9.
+        # NOTE: we check for refusals explicitly.
+        # If "REFUSAL" has the highest probability, we return None.
+        # Otherwise, we aggregate scores from 0-9.
         if "REFUSAL" in score and score["REFUSAL"] > max(
             score.get(str(i), 0) for i in range(10)
         ):
@@ -263,22 +266,23 @@ class OpenAiJudge:
         return sum_ / total
 
     def _aggregate_binary_score(self, score: dict) -> float:
-        """二値スコアを集約する
+        """Aggregate binary scores
 
-        拒否を明示的にチェックし、"REFUSAL"がYESとNOの両方より高い確率の場合はNoneを返す。
-        そうでなければP(YES) / (P(YES) + P(NO))でスコアを計算する。
-        YESとNOの合計確率が閾値（0.25）を下回る場合はNoneを返す。
+        Explicitly checks for refusals. Returns None if "REFUSAL" has higher
+        probability than both YES and NO. Otherwise calculates score as
+        P(YES) / (P(YES) + P(NO)). Returns None if combined probability of
+        YES and NO is below threshold (0.25).
 
         Args:
-            score (dict): トークンと確率のマッピング
+            score (dict): Token to probability mapping
 
         Returns:
-            float or None: 集約されたスコア（拒否の場合はNone）
+            float or None: Aggregated score (None for refusal)
         """
-        #   NOTE: we check for refusals explicitly.
-        #   If "REFUSAL" has a higher probability than both "YES" and "NO", we return None.
-        #   Otherwise, calculates a score P(YES) / (P(YES) + P(NO)).
-        #   Returns None if the combined probability of YES and NO is below a threshold (0.25).
+        # NOTE: we check for refusals explicitly.
+        # If "REFUSAL" has a higher probability than both "YES" and "NO", we return None.
+        # Otherwise, calculates a score P(YES) / (P(YES) + P(NO)).
+        # Returns None if the combined probability of YES and NO is below a threshold (0.25).
 
         yes_prob = score.get("YES", 0.0)
         no_prob = score.get("NO", 0.0)
@@ -300,15 +304,15 @@ class OpenAiJudge:
         return yes_prob / denominator
 
     def _aggregate_binary_text_score(self, response_text: str) -> bool:
-        """テキストベースの二値スコアを集約する
+        """Aggregate text-based binary scores
 
-        応答テキスト内の<answer>タグを解析してスコアを決定する。
+        Parses <answer> tags in response text to determine score.
 
         Args:
-            response_text (str): 生成された応答テキスト
+            response_text (str): Generated response text
 
         Returns:
-            int or None: 0（NO）、1（YES）、またはNone（拒否/無効）
+            int or None: 0 (NO), 1 (YES), or None (refusal/invalid)
         """
         if "<answer>REFUSAL</answer>" in response_text:
             return None
@@ -319,12 +323,12 @@ class OpenAiJudge:
         return None  # Invalid response
 
     async def __call__(self, **kwargs):
-        """クラスインスタンスを関数として呼び出すためのメソッド
+        """Method to call class instance as function
 
         Args:
-            **kwargs: judge()メソッドに渡すキーワード引数
+            **kwargs: Keyword arguments to pass to judge() method
 
         Returns:
-            float or None: 評価スコア
+            float or None: Evaluation score
         """
         return await self.judge(**kwargs)

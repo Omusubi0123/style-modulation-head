@@ -1,8 +1,8 @@
 """
-activation_steer.py - Transformerブロック出力へのステアリング
+activation_steer.py - Steering for transformer block outputs
 
-特定のレイヤーの出力または特定の位置（Attention入力、MLP入力など）に
-ステアリングベクトルを加算する。
+Add steering vectors to specific layer outputs or specific positions
+(attention input, MLP input, etc.).
 """
 
 from typing import Sequence, Union
@@ -13,17 +13,17 @@ from src.activation_steer.base.steerer import BaseActivationSteerer
 
 
 class ActivationSteerer(BaseActivationSteerer):
-    """特定のトランスフォーマーブロック出力に (coeff * steering_vector) を加算する"""
+    """Add (coeff * steering_vector) to specific transformer block output"""
 
     def _register_hooks(self) -> None:
-        """フックを登録"""
+        """Register hooks"""
         layer = self._get_layer()
         if self.debug:
             print(f"[ActivationSteerer] hooking layer {self.layer_idx}")
         self._handle = layer.register_forward_hook(self._hook_fn)
 
     def _hook_fn(self, module, ins, out):
-        """forwardフック：出力テンソルへステアリングを適用"""
+        """Forward hook: apply steering to output tensor"""
 
         def _process(t):
             return self._apply_steering(t)
@@ -52,15 +52,15 @@ class ActivationSteerer(BaseActivationSteerer):
 
 
 class ActivationSteererBlock(BaseActivationSteerer):
-    """特定のblock入力またはlayer norm入力に (coeff * steering_vector) を加算する
+    """Add (coeff * steering_vector) to specific block input or layer norm input
 
-    steering_typeは以下のいずれか:
-    - "attn": attention blockへの入力（layer normの出力）
-    - "mlp": MLP blockへの入力（layer normの出力）
-    - "attn_layernorm": attention前のlayer normへの入力
-    - "mlp_layernorm": MLP前のlayer normへの入力
-    - "attn_output": attention blockの出力（residual加算前）
-    - "mlp_output": MLP blockの出力（residual加算前）
+    steering_type must be one of:
+    - "attn": Input to attention block (output of layer norm)
+    - "mlp": Input to MLP block (output of layer norm)
+    - "attn_layernorm": Input to layer norm before attention
+    - "mlp_layernorm": Input to layer norm before MLP
+    - "attn_output": Output of attention block (before residual addition)
+    - "mlp_output": Output of MLP block (before residual addition)
     """
 
     VALID_STEERING_TYPES = {
@@ -84,17 +84,17 @@ class ActivationSteererBlock(BaseActivationSteerer):
         renorm_to_original_norm: bool = False,
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            steering_vector: ステアリングベクトル（1次元）
-            coeff: 係数（デフォルト: 1.0）
-            layer_idx: 対象レイヤーのインデックス（0-based、デフォルト: -1）
-            positions: 反映位置（"all"|"prompt"|"response"）
-            steering_type: ステアリングタイプ
-            renorm_to_original_norm: ステアリング後にノルムを元に戻すか
-            debug: デバッグ出力を有効化
+            model: Target model
+            steering_vector: Steering vector (1-dimensional)
+            coeff: Coefficient (default: 1.0)
+            layer_idx: Target layer index (0-based, default: -1)
+            positions: Application position ("all"|"prompt"|"response")
+            steering_type: Steering type
+            renorm_to_original_norm: Whether to restore norm after steering
+            debug: Enable debug output
         """
         super().__init__(
             model,
@@ -113,53 +113,53 @@ class ActivationSteererBlock(BaseActivationSteerer):
             )
 
     def _locate_target_module(self):
-        """ステアリングタイプに応じて対象モジュールを特定する
+        """Identify target module based on steering type
 
         Returns:
-            tuple: (対象モジュール, フックタイプ "input" or "output")
+            tuple: (target module, hook type "input" or "output")
         """
         layer = self._get_layer()
 
         if self.steering_type == "attn":
-            # Attention前のlayer normの出力
+            # Output of layer norm before attention
             attn_ln = self._find_attn_layernorm(layer)
             if attn_ln:
                 return attn_ln, "output"
-            # Layer normが見つからない場合、attention blockへの入力として直接フック
+            # If layer norm not found, hook directly to attention block input
             attn_block = self._find_attention_block(layer)
             if attn_block:
                 return attn_block, "input"
 
         elif self.steering_type == "mlp":
-            # MLP前のlayer normの出力
+            # Output of layer norm before MLP
             mlp_ln = self._find_mlp_layernorm(layer)
             if mlp_ln:
                 return mlp_ln, "output"
-            # Layer normが見つからない場合、MLP blockへの入力として直接フック
+            # If layer norm not found, hook directly to MLP block input
             mlp_block = self._find_mlp_block(layer)
             if mlp_block:
                 return mlp_block, "input"
 
         elif self.steering_type == "attn_layernorm":
-            # Attention前のlayer normへの入力
+            # Input to layer norm before attention
             attn_ln = self._find_attn_layernorm(layer)
             if attn_ln:
                 return attn_ln, "input"
 
         elif self.steering_type == "mlp_layernorm":
-            # MLP前のlayer normへの入力
+            # Input to layer norm before MLP
             mlp_ln = self._find_mlp_layernorm(layer)
             if mlp_ln:
                 return mlp_ln, "input"
 
         elif self.steering_type == "attn_output":
-            # Attention blockの出力
+            # Output of attention block
             attn_block = self._find_attention_block(layer)
             if attn_block:
                 return attn_block, "output"
 
         elif self.steering_type == "mlp_output":
-            # MLP blockの出力
+            # Output of MLP block
             mlp_block = self._find_mlp_block(layer)
             if mlp_block:
                 return mlp_block, "output"
@@ -169,7 +169,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
         )
 
     def _register_hooks(self) -> None:
-        """フックを登録"""
+        """Register hooks"""
         target_module, hook_type = self._locate_target_module()
 
         if hook_type == "input":
@@ -178,7 +178,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
             self._handle = target_module.register_forward_hook(self._forward_hook_fn)
 
     def _pre_hook_fn(self, module, ins):
-        """pre_hookフック：入力テンソルへステアリングを適用"""
+        """Pre-hook: apply steering to input tensor"""
         if isinstance(ins, tuple):
             if torch.is_tensor(ins[0]):
                 new_ins = (self._apply_steering(ins[0]), *ins[1:])
@@ -189,7 +189,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
         return ins
 
     def _forward_hook_fn(self, module, ins, out):
-        """forwardフック：出力テンソルへステアリングを適用"""
+        """Forward hook: apply steering to output tensor"""
         if torch.is_tensor(out):
             new_out = self._apply_steering(out)
         elif isinstance(out, (tuple, list)):
@@ -213,7 +213,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
 
 
 class ActivationSteererMultiple:
-    """複数のステアリングベクトルを異なるレイヤーに同時適用する"""
+    """Apply multiple steering vectors to different layers simultaneously"""
 
     def __init__(
         self,
@@ -222,18 +222,18 @@ class ActivationSteererMultiple:
         *,
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            instructions: ステアリング指示のリスト
-                各dictは以下のキーを持つ:
-                - steering_vector: ステアリングベクトル
-                - coeff: 係数（オプション、デフォルト: 1.0）
-                - layer_idx: レイヤーインデックス（オプション、デフォルト: -1）
-                - positions: 反映位置（オプション、デフォルト: "all"）
-                - renorm_to_original_norm: リノーム有無（オプション）
-            debug: デバッグ出力を有効化
+            model: Target model
+            instructions: List of steering instructions
+                Each dict has the following keys:
+                - steering_vector: Steering vector
+                - coeff: Coefficient (optional, default: 1.0)
+                - layer_idx: Layer index (optional, default: -1)
+                - positions: Application position (optional, default: "all")
+                - renorm_to_original_norm: Whether to renormalize (optional)
+            debug: Enable debug output
         """
         self.model = model
         self.instructions = instructions
@@ -253,16 +253,16 @@ class ActivationSteererMultiple:
             self._steerers.append(steerer)
 
     def __enter__(self):
-        """全ステアラーにフック登録"""
+        """Register hooks for all steerers"""
         for steerer in self._steerers:
             steerer._register_hooks()
         return self
 
     def __exit__(self, *exc):
-        """すべてのフックを解除"""
+        """Remove all hooks"""
         self.remove()
 
     def remove(self):
-        """すべての登録済みフックを解除"""
+        """Remove all registered hooks"""
         for steerer in self._steerers:
             steerer.remove()

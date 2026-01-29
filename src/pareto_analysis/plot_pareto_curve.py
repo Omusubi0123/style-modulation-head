@@ -1,17 +1,13 @@
 """
 plot_pareto_curve.py
 
-Steering位置比較実験の結果をPareto-Frontier風にプロットする
+Plot steering position comparison results as Pareto frontier curves.
 
-可視化:
-- 横軸: trait スコア
-- 縦軸: coherency スコア
-- 各Steering位置を異なる色で表示
-- 係数が小さい方から大きい方へ矢印で繋ぐ
-
-オプション:
-- 線形軸プロット（通常）
-- 対数軸プロット（右上の差を顕著に表示）
+Visualization:
+- X-axis: trait score
+- Y-axis: coherency score
+- Each steering position shown in different colors
+- Arrows connect points from smaller to larger coefficients
 """
 
 import os
@@ -23,14 +19,14 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
-# 統一カラーマップ（他のプロットと統一）
+# Unified color map (consistent with other plots)
 MODULE_ORDER = ['mlp_residual', 'attn_residual', 'attn_output', 'head_cor', 'head_cor_anti']
 MODULE_COLORS = {
-    'mlp_residual': '#27ae60',      # 緑（より鮮やか）
-    'attn_residual': '#2980b9',     # 青（より鮮やか）
-    'attn_output': '#c0392b',       # 赤（より鮮やか）
-    'head_cor': '#8e44ad',          # 紫（より鮮やか）
-    'head_cor_anti': '#d35400',     # オレンジ（より鮮やか）
+    'mlp_residual': '#27ae60',      # Green
+    'attn_residual': '#2980b9',     # Blue
+    'attn_output': '#c0392b',       # Red
+    'head_cor': '#8e44ad',          # Purple
+    'head_cor_anti': '#d35400',     # Orange
 }
 
 MODULE_LABELS = {
@@ -53,17 +49,15 @@ def draw_arrow_curve(
     points: List[tuple],
     color: str,
     alpha: float = 0.7,
-    use_log: bool = False,
 ):
     """
-    点を結ぶ曲線を描画し、矢印を追加する
+    Draw a curve connecting points with arrows.
     
     Args:
         ax: matplotlib axes
-        points: [(x1, y1), (x2, y2), ...] 順番に並んだ点のリスト
-        color: 線の色
-        alpha: 透明度
-        use_log: 対数軸を使用しているか
+        points: [(x1, y1), (x2, y2), ...] list of points in order
+        color: line color
+        alpha: transparency
     """
     if len(points) < 2:
         return
@@ -71,45 +65,28 @@ def draw_arrow_curve(
     xs = [p[0] for p in points]
     ys = [p[1] for p in points]
     
-    # 曲線を描画
+    # Draw the curve
     ax.plot(xs, ys, color=color, alpha=alpha, linestyle='-', zorder=1)
     
-    # 矢印を追加（中間点ごとに）
+    # Add arrows at midpoints
     for i in range(len(points) - 1):
         x1, y1 = points[i]
         x2, y2 = points[i + 1]
         
-        if use_log:
-            # 対数軸の場合は、対数スケールで中間点を計算
-            if x1 > 0 and x2 > 0:
-                mid_x = np.sqrt(x1 * x2)
-            else:
-                mid_x = (x1 + x2) / 2
-            if y1 > 0 and y2 > 0:
-                mid_y = np.sqrt(y1 * y2)
-            else:
-                mid_y = (y1 + y2) / 2
-        else:
-            mid_x = (x1 + x2) / 2
-            mid_y = (y1 + y2) / 2
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
         
-        # 方向ベクトル
+        # Direction vector
         dx = x2 - x1
         dy = y2 - y1
         
-        # 長さが0でない場合のみ矢印を描画
+        # Draw arrow only if length is non-zero
         if dx != 0 or dy != 0:
             length = np.sqrt(dx**2 + dy**2)
             if length > 0:
-                if use_log:
-                    # 対数軸の場合、矢印のスケールを調整
-                    scale_factor = 0.15
-                    dx_norm = dx * scale_factor
-                    dy_norm = dy * scale_factor
-                else:
-                    # 正規化
-                    dx_norm = dx / length * 2
-                    dy_norm = dy / length * 2
+                # Normalize
+                dx_norm = dx / length * 2
+                dy_norm = dy / length * 2
                 
                 ax.annotate('', 
                     xy=(mid_x + dx_norm, mid_y + dy_norm),
@@ -133,38 +110,36 @@ def plot_pareto_curve(
     filter_modules: str = 'mlp_residual,attn_residual,attn_output,head_cor,head_cor_anti',
     figsize: tuple = (10, 8),
     show_coef_labels: bool = False,
-    use_log_scale: bool = False,
     save_pdf: bool = True,
 ):
     """
-    Pareto-Frontier風のプロットを作成
+    Create Pareto frontier-style plots.
     
     Args:
-        input_file: CSVファイルのパス（value, coherence列が必要）
-        output_dir: 出力ディレクトリ
-        trait: 対象trait（Noneの場合はCSVから取得）
-        steering_method: 対象steering method (neg_add, pos_add, pos_subtract)
-        filter_modules: カンマ区切りのモジュールリスト
-        figsize: 図のサイズ
-        show_coef_labels: 各点に係数ラベルを表示するか
-        use_log_scale: 対数軸を使用するか（右上の差を顕著に表示）
-        save_pdf: PDFも保存するか
+        input_file: Path to CSV file (requires value, coherence columns)
+        output_dir: Output directory
+        trait: Target trait (if None, extracted from CSV)
+        steering_method: Target steering method (neg_add, pos_add, pos_subtract)
+        filter_modules: Comma-separated list of modules to plot
+        figsize: Figure size
+        show_coef_labels: Whether to show coefficient labels on each point
+        save_pdf: Whether to also save as PDF
     """
     os.makedirs(output_dir, exist_ok=True)
     
-    # データ読み込み
+    # Load data
     df = pd.read_csv(input_file)
     
-    # trait取得
+    # Get trait
     if trait is None:
         trait = df['trait'].iloc[0] if 'trait' in df.columns else 'unknown'
     
-    # モジュールフィルタ
+    # Filter modules
     if filter_modules:
         modules_filter = [m.strip() for m in filter_modules.split(',')]
         df = df[df['module'].isin(modules_filter)]
     
-    # mul_h_div_s系を除外
+    # Exclude mul_h_div_s variants
     drop_modules = ['head_cor_mul_h_div_s', 'head_cor_anti_mul_h_div_s']
     df = df[~df['module'].isin(drop_modules)]
     
@@ -172,7 +147,7 @@ def plot_pareto_curve(
         print(f"No data to plot for trait={trait}")
         return
     
-    # steering_methodリスト
+    # Determine steering methods to plot
     if steering_method:
         methods = [steering_method]
     else:
@@ -185,15 +160,15 @@ def plot_pareto_curve(
             print(f"No data for trait={trait}, method={method}")
             continue
         
-        # プロット作成
+        # Create plot
         fig, ax = plt.subplots(figsize=figsize)
         
-        # 背景色
+        # Background color
         ax.set_facecolor('#f8f9fa')
         
         legend_handles = []
         
-        # モジュール順でプロット
+        # Plot in module order
         ordered_modules = [m for m in MODULE_ORDER if m in method_df['module'].unique()]
         
         for module in ordered_modules:
@@ -202,73 +177,50 @@ def plot_pareto_curve(
             if module_df.empty:
                 continue
             
-            # 係数でソート
+            # Sort by coefficient
             module_df = module_df.sort_values('multiplier')
             
             color = MODULE_COLORS.get(module, '#333333')
             label = MODULE_LABELS.get(module, module)
             
-            # 各点の座標を取得
+            # Get coordinates
             coherences = module_df['coherence'].values
             values = module_df['value'].values
             multipliers = module_df['multiplier'].values
             
-            if use_log_scale:
-                # 対数軸用に変換: 100からの差分 + 小さなオフセット（0を避ける）
-                epsilon = 0.1
-                plot_x = np.maximum(100.01 - values, epsilon)
-                plot_y = np.maximum(100.01 - coherences, epsilon)
-            else:
-                # 横軸: trait, 縦軸: coherency
-                plot_x = values
-                plot_y = coherences
+            # X-axis: trait, Y-axis: coherency
+            plot_x = values
+            plot_y = coherences
             
-            # 曲線と矢印を描画
+            # Draw curve with arrows
             points = list(zip(plot_x, plot_y))
-            draw_arrow_curve(ax, points, color=color, alpha=0.7, use_log=use_log_scale)
+            draw_arrow_curve(ax, points, color=color, alpha=0.7)
             
-            # 全点をプロット
-            for i, (px, py, mult, coh, val) in enumerate(zip(plot_x, plot_y, multipliers, coherences, values)):
+            # Plot all points
+            for i, (px, py, mult) in enumerate(zip(plot_x, plot_y, multipliers)):
                 ax.scatter(px, py, color=color, s=160, alpha=0.85, 
                           edgecolors='white', zorder=3)
                 
                 if show_coef_labels:
-                    offset = (5, 5) if not use_log_scale else (8, 8)
                     ax.annotate(f'{mult:.1f}', (px, py), 
-                               textcoords="offset points", xytext=offset,
+                               textcoords="offset points", xytext=(5, 5),
                                fontsize=8, alpha=0.8, fontweight='medium')
             
-            # 凡例用ハンドル
+            # Legend handle
             legend_handles.append(
                 Line2D([0], [0], marker='o', color=color, markerfacecolor=color,
                       markersize=10, label=f'{label}', linestyle='-', 
                       markeredgecolor='white')
             )
         
-        # グラフ装飾
-        method_label = METHOD_LABELS.get(method, method)
+        # Graph decoration
+        ax.set_xlabel('Trait Score')
+        ax.set_ylabel('Coherency Score')
+        ax.set_xlim(-5, 105)
+        ax.set_ylim(-5, 105)
+        ax.grid(True, alpha=0.4, linestyle='--')
         
-        if use_log_scale:
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            ax.set_xlabel('100 - Trait Score (log scale)')
-            ax.set_ylabel('100 - Coherency Score (log scale)')
-            
-            # 軸の範囲設定（対数軸）
-            ax.set_xlim(0.05, 110)
-            ax.set_ylim(0.05, 110)
-            
-            # グリッド設定
-            ax.grid(True, which='major', alpha=0.5, linestyle='-')
-            ax.grid(True, which='minor', alpha=0.3, linestyle='--')
-        else:
-            ax.set_xlabel('Trait Score')
-            ax.set_ylabel('Coherency Score')
-            ax.set_xlim(-5, 105)
-            ax.set_ylim(-5, 105)
-            ax.grid(True, alpha=0.4, linestyle='--')
-        
-        # 凡例の追加
+        # Add legend
         if legend_handles:
             legend = ax.legend(handles=legend_handles, loc='best',
                               framealpha=0.95, edgecolor='#bdc3c7', fancybox=True,
@@ -277,11 +229,8 @@ def plot_pareto_curve(
         
         plt.tight_layout()
         
-        # 保存
-        if use_log_scale:
-            output_path = os.path.join(output_dir, f'pareto_log_{trait}_{method}.png')
-        else:
-            output_path = os.path.join(output_dir, f'pareto_{trait}_{method}.png')
+        # Save
+        output_path = os.path.join(output_dir, f'pareto_{trait}_{method}.png')
         
         plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white', edgecolor='none')
         if save_pdf:
@@ -297,23 +246,21 @@ def plot_all_pareto(
     traits: str = 'evil,sycophantic,hallucinating',
     filter_modules: str = 'mlp_residual,attn_residual,attn_output,head_cor,head_cor_anti',
     show_coef_labels: bool = False,
-    use_log_scale: bool = False,
     save_pdf: bool = True,
 ):
     """
-    全ペルソナ・全steering methodのPareto曲線をプロット
+    Plot Pareto curves for all personas and steering methods.
     
     Args:
-        data_dir: CSVデータのディレクトリ
-        output_base_dir: 出力ベースディレクトリ
-        model: モデル名 ('llama' or 'qwen')
-        traits: カンマ区切りのtrait名リスト
-        filter_modules: プロット対象のモジュール
-        show_coef_labels: 係数ラベルを表示するか
-        use_log_scale: 対数軸を使用するか
-        save_pdf: PDFも保存するか
+        data_dir: Directory containing CSV data
+        output_base_dir: Base output directory
+        model: Model name ('llama' or 'qwen')
+        traits: Comma-separated list of trait names
+        filter_modules: Modules to include in plot
+        show_coef_labels: Whether to show coefficient labels
+        save_pdf: Whether to also save as PDF
     """
-    # モデル名のマッピング
+    # Model name mapping
     model_names = {
         'llama': 'Llama-3.1-8B-Instruct',
         'qwen': 'Qwen2.5-7B-Instruct',
@@ -331,27 +278,26 @@ def plot_all_pareto(
     model_name = model_names[model]
     model_prefix = model_prefixes[model]
     
-    # traitsのパース
+    # Parse traits
     if isinstance(traits, (list, tuple)):
         trait_list = list(traits)
     else:
         trait_list = [t.strip() for t in traits.split(',')]
     
-    scale_label = "Log Scale" if use_log_scale else "Linear Scale"
-    print(f"=== Generating Pareto Curves ({scale_label}) ===")
+    print(f"=== Generating Pareto Curves ===")
     print(f"Model: {model_name}")
     print(f"Traits: {trait_list}")
     print()
     
     for trait in trait_list:
-        # 入力ファイルパス（F値なしのフォーマットCSV）
+        # Input file path (formatted CSV without F-value)
         input_file = os.path.join(
             data_dir, 
             model_name, 
             f'steering_position_comparison_{model_prefix}_{trait}_formatted.csv'
         )
         
-        # F値付きファイルがある場合はそちらを優先（互換性のため）
+        # Check for F-value file for compatibility
         fvalue_file = os.path.join(
             data_dir, 
             model_name, 
@@ -364,32 +310,25 @@ def plot_all_pareto(
             print(f"Warning: File not found: {input_file}")
             continue
         
-        # 出力ディレクトリ（対数軸の場合は別フォルダ）
-        if use_log_scale:
-            output_dir = os.path.join(output_base_dir, model_name, 'pareto_plots_log')
-        else:
-            output_dir = os.path.join(output_base_dir, model_name, 'pareto_plots')
+        # Output directory
+        output_dir = os.path.join(output_base_dir, model_name, 'pareto_plots')
         
         print(f"Processing: {trait}")
         
-        # 全methodをプロット
+        # Plot all methods
         plot_pareto_curve(
             input_file=input_file,
             output_dir=output_dir,
             trait=trait,
-            steering_method=None,  # 全method
+            steering_method=None,  # All methods
             filter_modules=filter_modules,
             show_coef_labels=show_coef_labels,
-            use_log_scale=use_log_scale,
             save_pdf=save_pdf,
         )
     
     print()
     print(f"=== Completed ===")
-    if use_log_scale:
-        print(f"Output directory: {os.path.join(output_base_dir, model_name, 'pareto_plots_log')}")
-    else:
-        print(f"Output directory: {os.path.join(output_base_dir, model_name, 'pareto_plots')}")
+    print(f"Output directory: {os.path.join(output_base_dir, model_name, 'pareto_plots')}")
 
 
 def plot_single(
@@ -399,11 +338,10 @@ def plot_single(
     steering_method: str = None,
     filter_modules: str = 'mlp_residual,attn_residual,attn_output,head_cor,head_cor_anti',
     show_coef_labels: bool = False,
-    use_log_scale: bool = False,
     save_pdf: bool = True,
 ):
     """
-    単一ファイルからPareto曲線をプロット（コマンドラインから使いやすいラッパー）
+    Plot Pareto curves from a single file (convenient wrapper for CLI).
     """
     plot_pareto_curve(
         input_file=input_file,
@@ -412,49 +350,6 @@ def plot_single(
         steering_method=steering_method,
         filter_modules=filter_modules,
         show_coef_labels=show_coef_labels,
-        use_log_scale=use_log_scale,
-        save_pdf=save_pdf,
-    )
-
-
-def plot_both_scales(
-    data_dir: str = 'data/steering_position_plot',
-    output_base_dir: str = 'data/steering_position_plot',
-    model: str = 'qwen',
-    traits: str = 'evil,sycophantic,hallucinating',
-    filter_modules: str = 'mlp_residual,attn_residual,attn_output,head_cor,head_cor_anti',
-    show_coef_labels: bool = False,
-    save_pdf: bool = True,
-):
-    """
-    線形軸と対数軸の両方でプロットを生成
-    """
-    print("=" * 60)
-    print("Generating Linear Scale Plots")
-    print("=" * 60)
-    plot_all_pareto(
-        data_dir=data_dir,
-        output_base_dir=output_base_dir,
-        model=model,
-        traits=traits,
-        filter_modules=filter_modules,
-        show_coef_labels=show_coef_labels,
-        use_log_scale=False,
-        save_pdf=save_pdf,
-    )
-    
-    print()
-    print("=" * 60)
-    print("Generating Log Scale Plots")
-    print("=" * 60)
-    plot_all_pareto(
-        data_dir=data_dir,
-        output_base_dir=output_base_dir,
-        model=model,
-        traits=traits,
-        filter_modules=filter_modules,
-        show_coef_labels=show_coef_labels,
-        use_log_scale=True,
         save_pdf=save_pdf,
     )
 
@@ -463,5 +358,4 @@ if __name__ == '__main__':
     fire.Fire({
         'single': plot_single,
         'all': plot_all_pareto,
-        'both': plot_both_scales,
     })

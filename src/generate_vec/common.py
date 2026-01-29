@@ -1,8 +1,8 @@
 """
-common.py - Persona Vector生成用の共通ユーティリティ
+common.py - Common utilities for persona vector generation
 
-generate_vec.py, generate_vec_attn.py, generate_vec_block.py で共通に使用する
-機能を提供する。
+Provides common functionality used by generate_vec.py, generate_vec_attn.py,
+and generate_vec_block.py.
 """
 
 import gc
@@ -21,41 +21,41 @@ config = setup_credentials()
 
 
 def load_jsonl(file_path: str) -> list[dict]:
-    """JSONLファイルを読み込んで辞書のリストとして返す
+    """Load JSONL file and return as list of dictionaries
 
     Args:
-        file_path: 読み込むJSONLファイルのパス
+        file_path: Path to JSONL file to load
 
     Returns:
-        各行がパースされたJSONオブジェクトのリスト
+        List of parsed JSON objects from each line
     """
     with open(file_path, "r") as f:
         return [json.loads(line) for line in f]
 
 
 def get_max_layer(model) -> int:
-    """モデルから最大レイヤー数を取得する
+    """Get maximum layer count from model
 
     Args:
-        model: Transformerモデル
+        model: Transformer model
 
     Returns:
-        最大レイヤー数
+        Maximum layer count
 
     Raises:
-        AttributeError: レイヤー数が見つからない
+        AttributeError: If layer count not found
     """
     possible_layer_attrs = ["num_hidden_layers", "n_layers", "num_layers", "n_layer"]
     max_layer = None
 
-    # まずメインのconfigで試す
+    # First try main config
     for attr in possible_layer_attrs:
         if hasattr(model.config, attr):
             max_layer = getattr(model.config, attr)
             print(f"Using {attr} = {max_layer}")
             break
 
-    # メインのconfigで見つからない場合、text_configを試す（マルチモーダルモデル用）
+    # If not found in main config, try text_config (for multimodal models)
     if max_layer is None and hasattr(model.config, "text_config"):
         text_config = model.config.text_config
         print("Checking text_config for layer attributes...")
@@ -87,16 +87,16 @@ def get_max_layer(model) -> int:
 
 
 def locate_layer_list(model):
-    """モデルからレイヤーリストを特定する
+    """Locate layer list from model
 
     Args:
-        model: Transformerモデル
+        model: Transformer model
 
     Returns:
-        レイヤーリスト（ModuleList）
+        Layer list (ModuleList)
 
     Raises:
-        ValueError: レイヤーリストが見つからない
+        ValueError: If layer list not found
     """
     possible_attrs = [
         "transformer.h",  # GPT-2/Neo, Bloom, etc.
@@ -126,17 +126,17 @@ def locate_layer_list(model):
 
 
 def get_attention_config(model) -> dict:
-    """モデルからAttention関連の設定を取得する
+    """Get attention-related configuration from model
 
     Args:
-        model: Transformerモデル
+        model: Transformer model
 
     Returns:
-        dict: Attention設定
-            - num_attention_heads: アテンションヘッド数
-            - num_key_value_heads: KVヘッド数（GQA用）
-            - hidden_size: 隠れ層サイズ
-            - head_dim: ヘッド次元
+        dict: Attention configuration
+            - num_attention_heads: Number of attention heads
+            - num_key_value_heads: Number of KV heads (for GQA)
+            - hidden_size: Hidden size
+            - head_dim: Head dimension
     """
     cfg = model.config
     if hasattr(cfg, "text_config"):
@@ -160,13 +160,13 @@ def get_attention_config(model) -> dict:
 
 
 def load_model(model_name: str) -> Tuple:
-    """モデルとトークナイザーを読み込む
+    """Load model and tokenizer
 
-    メモリ効率のためにbfloat16を使用。
-    マルチモーダルモデルにも対応。
+    Uses bfloat16 for memory efficiency.
+    Also supports multimodal models.
 
     Args:
-        model_name: モデル名またはパス
+        model_name: Model name or path
 
     Returns:
         tuple: (model, tokenizer)
@@ -210,19 +210,19 @@ def load_model(model_name: str) -> Tuple:
 def get_persona_effective(
     pos_path: str, neg_path: str, trait: str, threshold: int = 50
 ) -> Tuple:
-    """効果的なペルソナデータをフィルタリングして抽出する
+    """Filter and extract effective persona data
 
     Args:
-        pos_path: ポジティブなペルソナデータのCSVファイルパス
-        neg_path: ネガティブなペルソナデータのCSVファイルパス
-        trait: 評価する特性名
-        threshold: フィルタリングの閾値（デフォルト: 50）
+        pos_path: CSV file path for positive persona data
+        neg_path: CSV file path for negative persona data
+        trait: Trait name to evaluate
+        threshold: Filtering threshold (default: 50)
 
     Returns:
         tuple: (pos_effective, neg_effective, pos_prompts, neg_prompts, pos_responses, neg_responses)
 
     Raises:
-        FileNotFoundError: ファイルが見つからない
+        FileNotFoundError: If file not found
     """
     if not os.path.exists(pos_path):
         raise FileNotFoundError(
@@ -266,17 +266,17 @@ def get_persona_effective(
 def compute_persona_vector_diff(
     pos_vectors: dict, neg_vectors: dict, layer_list: List[int], hidden_size: int
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """ポジティブとネガティブのベクトルからPersona Vectorの差分を計算する
+    """Compute persona vector differences from positive and negative vectors
 
     Args:
-        pos_vectors: ポジティブデータのベクトル辞書（layer -> tensor）
-        neg_vectors: ネガティブデータのベクトル辞書（layer -> tensor）
-        layer_list: レイヤーインデックスのリスト
-        hidden_size: 隠れ層サイズ
+        pos_vectors: Positive data vector dictionary (layer -> tensor)
+        neg_vectors: Negative data vector dictionary (layer -> tensor)
+        layer_list: List of layer indices
+        hidden_size: Hidden size
 
     Returns:
         tuple: (prompt_avg_diff, response_avg_diff, prompt_last_diff)
-            各テンソルの形状は [num_layers, hidden_size]
+            Each tensor has shape [num_layers, hidden_size]
     """
     prompt_avg_diff_list = []
     response_avg_diff_list = []
@@ -326,15 +326,15 @@ def save_persona_vectors(
     prompt_last_diff: torch.Tensor,
     suffix: str = "",
 ) -> None:
-    """Persona Vectorを保存する
+    """Save persona vectors
 
     Args:
-        save_dir: 保存先ディレクトリ
-        trait: 特性名
-        prompt_avg_diff: プロンプト平均の差分ベクトル
-        response_avg_diff: 応答平均の差分ベクトル
-        prompt_last_diff: プロンプト最終トークンの差分ベクトル
-        suffix: ファイル名の接尾辞（例: "_attn_pre_o_proj"）
+        save_dir: Save directory
+        trait: Trait name
+        prompt_avg_diff: Prompt average difference vector
+        response_avg_diff: Response average difference vector
+        prompt_last_diff: Prompt last token difference vector
+        suffix: Filename suffix (e.g., "_attn_pre_o_proj")
     """
     os.makedirs(save_dir, exist_ok=True)
 
@@ -350,7 +350,7 @@ def save_persona_vectors(
 
 
 def clear_memory() -> None:
-    """GPUメモリをクリアする"""
+    """Clear GPU memory"""
     torch.cuda.synchronize()
     torch.cuda.empty_cache()
     gc.collect()
@@ -360,15 +360,15 @@ def clear_memory() -> None:
 def validate_effective_samples(
     pos_prompts: List[str], neg_prompts: List[str], threshold: int
 ) -> None:
-    """フィルタリング後のサンプル数を検証する
+    """Validate sample count after filtering
 
     Args:
-        pos_prompts: ポジティブなプロンプトリスト
-        neg_prompts: ネガティブなプロンプトリスト
-        threshold: フィルタリング閾値
+        pos_prompts: List of positive prompts
+        neg_prompts: List of negative prompts
+        threshold: Filtering threshold
 
     Raises:
-        ValueError: 有効なサンプルが見つからない
+        ValueError: If no valid samples found
     """
     print(f"Filtered effective samples:")
     print(f"  Positive: {len(pos_prompts)} samples")
@@ -385,4 +385,3 @@ def validate_effective_samples(
             f"No effective negative samples found after filtering with threshold={threshold}. "
             f"Try lowering the threshold or check the input data."
         )
-

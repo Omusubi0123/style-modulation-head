@@ -1,5 +1,5 @@
 """
-visualize.py - Cosine類似度の可視化ロジック
+visualize.py - Cosine similarity visualization logic
 """
 
 from pathlib import Path
@@ -12,13 +12,13 @@ import torch
 
 
 def create_residual_stream_labels(num_layers: int) -> List[str]:
-    """Residual stream用のラベルを作成
+    """Create labels for residual stream
 
     Args:
-        num_layers: 層数
+        num_layers: Number of layers
 
     Returns:
-        ['attn_L1', 'mlp_L1', 'attn_L2', 'mlp_L2', ...] 形式のラベルリスト
+        List of labels in format ['attn_L1', 'mlp_L1', 'attn_L2', 'mlp_L2', ...]
     """
     labels = []
     for layer_idx in range(num_layers):
@@ -33,16 +33,16 @@ def visualize_layer_cosine_similarity(
     layer_labels: Optional[List[str]] = None,
     figsize: tuple = (10, 10),
 ) -> str:
-    """層間のcosine類似度をヒートマップで可視化
+    """Visualize layer-wise cosine similarity as heatmap
 
     Args:
-        similarity_matrix: 類似度行列 [n, n]
-        save_path: 保存パス
-        layer_labels: 軸ラベル（Noneの場合は1始まりの数値）
-        figsize: 図のサイズ
+        similarity_matrix: Similarity matrix [n, n]
+        save_path: Path to save the figure
+        layer_labels: Axis labels (1-indexed numbers if None)
+        figsize: Figure size
 
     Returns:
-        保存パス
+        Save path
     """
     num_positions = similarity_matrix.shape[0]
 
@@ -84,22 +84,22 @@ def visualize_residual_stream_similarity(
     figsize: tuple = (12, 10),
     tick_interval: int = 4,
 ) -> str:
-    """Residual streamのcosine類似度をヒートマップで可視化
+    """Visualize residual stream cosine similarity as heatmap
 
     Args:
-        similarity_matrix: 類似度行列 [num_layers*2, num_layers*2]
-        num_layers: 層数
-        save_path: 保存パス
-        figsize: 図のサイズ
-        tick_interval: ラベルを表示する間隔
+        similarity_matrix: Similarity matrix [num_layers*2, num_layers*2]
+        num_layers: Number of layers
+        save_path: Path to save the figure
+        figsize: Figure size
+        tick_interval: Interval for displaying labels
 
     Returns:
-        保存パス
+        Save path
     """
     labels = create_residual_stream_labels(num_layers)
     total_positions = len(labels)
 
-    # 表示するラベルを間引く（多すぎると見づらい）
+    # Thin out displayed labels (too many makes it unreadable)
     tick_positions = list(range(0, total_positions, tick_interval))
     tick_labels = [labels[i] for i in tick_positions]
 
@@ -116,7 +116,7 @@ def visualize_residual_stream_similarity(
         cbar_kws={"label": "Cosine Similarity", "shrink": 0.8},
     )
 
-    # 軸の目盛りを設定
+    # Set axis ticks
     ax.set_xticks([i + 0.5 for i in tick_positions])
     ax.set_xticklabels(tick_labels, rotation=45, ha="right", fontsize=8)
     ax.set_yticks([i + 0.5 for i in tick_positions])
@@ -140,15 +140,15 @@ def visualize_adjacent_difference_lineplot(
     save_path: Path,
     figsize: tuple = (14, 5),
 ) -> str:
-    """隣接層間類似度の差分を折れ線グラフで可視化
+    """Visualize adjacent layer similarity differences as line plot
 
     Args:
-        differences: 差分ベクトル
-        save_path: 保存パス
-        figsize: 図のサイズ
+        differences: Difference vector
+        save_path: Path to save the figure
+        figsize: Figure size
 
     Returns:
-        保存パス
+        Save path
     """
     num_layers = len(differences)
     x = list(range(2, num_layers + 2))
@@ -169,7 +169,7 @@ def visualize_adjacent_difference_lineplot(
     ax.set_xlabel("Layer i (sim(L_{i-1}→L_i) - sim(L_i→L_{i+1}))")
     ax.set_ylabel("Similarity Difference")
 
-    # 統計情報
+    # Statistics
     stats_text = (
         f"Mean: {y.mean():.3f} ± {y.std():.3f}\n"
         f"Min: {y.min():.3f} (L{y.argmin() + 2})\n"
@@ -193,4 +193,3 @@ def visualize_adjacent_difference_lineplot(
 
     print(f"Saved: {save_path}")
     return str(save_path)
-

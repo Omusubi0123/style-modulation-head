@@ -1,7 +1,7 @@
 """
-activation_steer_head.py - 特定のAttentionヘッドのみをsteeringする
+activation_steer_head.py - Steering for specific attention heads only
 
-特定の層の特定のヘッドのO projection前の出力部分のみを増大させてsteering。
+Apply steering to specific heads' O projection input only.
 """
 
 from typing import List, Sequence, Union
@@ -12,10 +12,10 @@ from src.activation_steer.base.steerer import BaseActivationSteerer
 
 
 class ActivationSteererHead(BaseActivationSteerer):
-    """特定のAttentionヘッドのO projection前の出力をsteeringする
+    """Steer the O projection input of specific attention heads
 
-    Attention内部のattn_weights @ Vの結果（O projection前）に対して、
-    特定のヘッドの次元のみにsteeringベクトルを加算する。
+    Apply steering vector to specific head dimensions of the
+    attn_weights @ V result (before O projection).
     """
 
     def __init__(
@@ -29,16 +29,16 @@ class ActivationSteererHead(BaseActivationSteerer):
         positions: str = "all",
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            steering_vector: ステアリングベクトル（1次元、hidden_size）
-            coeff: 係数（デフォルト: 1.0）
-            layer_idx: 対象レイヤーのインデックス（0-based）
-            head_indices: ステアリング対象のヘッドインデックスのリスト
-            positions: 反映位置（"all"|"prompt"|"response"）
-            debug: デバッグ出力を有効化
+            model: Target model
+            steering_vector: Steering vector (1-dimensional, hidden_size)
+            coeff: Coefficient (default: 1.0)
+            layer_idx: Target layer index (0-based)
+            head_indices: List of head indices to steer
+            positions: Application position ("all"|"prompt"|"response")
+            debug: Enable debug output
         """
         super().__init__(
             model,
@@ -52,7 +52,7 @@ class ActivationSteererHead(BaseActivationSteerer):
 
         self.head_indices = head_indices if head_indices is not None else []
 
-        # Attention設定を取得
+        # Get attention configuration
         attn_config = self._get_attention_config()
         self.num_heads = attn_config["num_attention_heads"]
         self.head_dim = attn_config["head_dim"]
@@ -64,14 +64,14 @@ class ActivationSteererHead(BaseActivationSteerer):
                     f"head_index {h_idx} out of range [0, {self.num_heads})"
                 )
 
-        # 指定されたヘッドの次元のみを有効にしたマスクを作成
+        # Create mask that only enables specified head dimensions
         self.head_mask = torch.zeros_like(self.vector)
         for h_idx in self.head_indices:
             start_idx = h_idx * self.head_dim
             end_idx = (h_idx + 1) * self.head_dim
             self.head_mask[start_idx:end_idx] = 1.0
 
-        # マスクされたsteeringベクトル
+        # Masked steering vector
         self.masked_vector = self.vector * self.head_mask
 
         if self.debug:
@@ -83,7 +83,7 @@ class ActivationSteererHead(BaseActivationSteerer):
             )
 
     def _locate_o_proj(self) -> torch.nn.Module:
-        """対象レイヤーのo_projモジュールを特定する"""
+        """Locate the o_proj module for the target layer"""
         layer = self._get_layer()
         attn_block = self._find_attention_block(layer)
 
@@ -102,12 +102,12 @@ class ActivationSteererHead(BaseActivationSteerer):
         return o_proj
 
     def _register_hooks(self) -> None:
-        """フックを登録"""
+        """Register hooks"""
         o_proj = self._locate_o_proj()
         self._handle = o_proj.register_forward_pre_hook(self._hook_fn)
 
     def _hook_fn(self, module, input):
-        """pre_hookフック：o_projへの入力に対して指定ヘッドのみsteeringを適用"""
+        """Pre-hook: apply steering to specified heads only on o_proj input"""
         steer = self.coeff * self.masked_vector
 
         def _add_steering(t):
@@ -137,7 +137,7 @@ class ActivationSteererHead(BaseActivationSteerer):
 
 
 class ActivationSteererHeadMultiple:
-    """複数のヘッドsteeringを異なるレイヤーに同時適用する"""
+    """Apply multiple head steering to different layers simultaneously"""
 
     def __init__(
         self,
@@ -146,18 +146,18 @@ class ActivationSteererHeadMultiple:
         *,
         debug: bool = False,
     ):
-        """コンストラクタ
+        """Constructor
 
         Args:
-            model: 対象のモデル
-            instructions: ステアリング指示のリスト
-                各dictは以下のキーを持つ:
-                - steering_vector: ステアリングベクトル
-                - coeff: 係数（オプション、デフォルト: 1.0）
-                - layer_idx: レイヤーインデックス（オプション、デフォルト: -1）
-                - head_indices: ヘッドインデックスのリスト（オプション）
-                - positions: 反映位置（オプション、デフォルト: "all"）
-            debug: デバッグ出力を有効化
+            model: Target model
+            instructions: List of steering instructions
+                Each dict has the following keys:
+                - steering_vector: Steering vector
+                - coeff: Coefficient (optional, default: 1.0)
+                - layer_idx: Layer index (optional, default: -1)
+                - head_indices: List of head indices (optional)
+                - positions: Application position (optional, default: "all")
+            debug: Enable debug output
         """
         self.model = model
         self.instructions = instructions
@@ -177,17 +177,17 @@ class ActivationSteererHeadMultiple:
             self._steerers.append(steerer)
 
     def __enter__(self):
-        """全ステアラーにフック登録"""
+        """Register hooks for all steerers"""
         for steerer in self._steerers:
             steerer._register_hooks()
         return self
 
     def __exit__(self, *exc):
-        """すべてのフックを解除"""
+        """Remove all hooks"""
         self.remove()
 
     def remove(self):
-        """すべての登録済みフックを解除"""
+        """Remove all registered hooks"""
         for steerer in self._steerers:
             steerer.remove()
 
@@ -199,7 +199,7 @@ def create_head_steering_instructions(
     coeff: float = 1.0,
     positions: str = "all",
 ) -> dict:
-    """ヘッドsteeringの指示を作成するヘルパー関数"""
+    """Helper function to create head steering instructions"""
     return {
         "steering_vector": steering_vector,
         "coeff": coeff,

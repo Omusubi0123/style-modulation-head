@@ -1,5 +1,5 @@
 """
-compute.py - Cosine類似度の計算ロジック
+compute.py - Cosine similarity computation logic
 """
 
 from pathlib import Path
@@ -15,16 +15,16 @@ def load_vectors_for_positions(
     vector_type: str,
     layer_positions: List[str],
 ) -> Dict[str, Dict[str, torch.Tensor]]:
-    """複数のlayer positionのベクトルを読み込む
+    """Load vectors for multiple layer positions
 
     Args:
-        persona_vectors_dir: ベクトルディレクトリのルート
-        model_name: モデル名
+        persona_vectors_dir: Root directory containing vectors
+        model_name: Model name
         vector_type: 'response_avg_diff', 'prompt_avg_diff', 'prompt_last_diff'
-        layer_positions: 読み込むlayer positionのリスト
+        layer_positions: List of layer positions to load
 
     Returns:
-        {trait_name: {layer_position: vector}} の辞書
+        Dictionary of {trait_name: {layer_position: vector}}
     """
     vectors_dir = Path(persona_vectors_dir) / model_name
     vectors_dict: Dict[str, Dict[str, torch.Tensor]] = {}
@@ -48,13 +48,13 @@ def load_vectors_for_positions(
 
 
 def compute_layerwise_cosine_similarity(vector: torch.Tensor) -> torch.Tensor:
-    """各層ベクトル間のcosine類似度を計算
+    """Compute cosine similarity between layer vectors
 
     Args:
-        vector: [num_layers, hidden_dim] のベクトル
+        vector: Tensor of shape [num_layers, hidden_dim]
 
     Returns:
-        similarity_matrix: [num_layers, num_layers] のcosine類似度行列
+        similarity_matrix: Cosine similarity matrix of shape [num_layers, num_layers]
     """
     vectors_np = vector.numpy()
     similarity_matrix = cosine_similarity(vectors_np)
@@ -65,18 +65,18 @@ def compute_residual_stream_similarity(
     attn_vectors: torch.Tensor,
     mlp_vectors: torch.Tensor,
 ) -> torch.Tensor:
-    """Residual streamのcosine類似度行列を計算
+    """Compute cosine similarity matrix for residual stream
 
     Args:
-        attn_vectors: Attention層のベクトル [num_layers, hidden_dim]
-        mlp_vectors: MLP層のベクトル [num_layers, hidden_dim]
+        attn_vectors: Attention layer vectors [num_layers, hidden_dim]
+        mlp_vectors: MLP layer vectors [num_layers, hidden_dim]
 
     Returns:
-        similarity_matrix: [num_layers*2, num_layers*2] のcosine類似度行列
+        similarity_matrix: Cosine similarity matrix of shape [num_layers*2, num_layers*2]
     """
     num_layers = attn_vectors.shape[0]
 
-    # Residual streamの順序に従って結合: [attn_1, mlp_1, attn_2, mlp_2, ...]
+    # Combine in residual stream order: [attn_1, mlp_1, attn_2, mlp_2, ...]
     combined_vectors = []
     for layer_idx in range(num_layers):
         combined_vectors.append(attn_vectors[layer_idx])
@@ -84,7 +84,7 @@ def compute_residual_stream_similarity(
 
     combined_vectors = torch.stack(combined_vectors)  # [num_layers*2, hidden_dim]
 
-    # Cosine類似度を計算
+    # Compute cosine similarity
     vectors_np = combined_vectors.numpy()
     similarity_matrix = cosine_similarity(vectors_np)
 
@@ -92,13 +92,13 @@ def compute_residual_stream_similarity(
 
 
 def compute_adjacent_layer_similarity(vector: torch.Tensor) -> torch.Tensor:
-    """隣接層間のcosine類似度を計算
+    """Compute cosine similarity between adjacent layers
 
     Args:
-        vector: [num_layers, hidden_dim] のベクトル
+        vector: Tensor of shape [num_layers, hidden_dim]
 
     Returns:
-        adjacent_similarities: [num_layers-1] の隣接層間cosine類似度
+        adjacent_similarities: Cosine similarities between adjacent layers [num_layers-1]
     """
     vectors_np = vector.numpy()
     num_layers = vector.shape[0]
@@ -112,17 +112,16 @@ def compute_adjacent_layer_similarity(vector: torch.Tensor) -> torch.Tensor:
 
 
 def compute_adjacent_layer_difference(vector: torch.Tensor) -> torch.Tensor:
-    """隣接層間類似度の差分を計算
+    """Compute difference of adjacent layer similarities
 
-    層iについて: sim(L_{i-1}, L_i) - sim(L_i, L_{i+1})
+    For layer i: sim(L_{i-1}, L_i) - sim(L_i, L_{i+1})
 
     Args:
-        vector: [num_layers, hidden_dim] のベクトル
+        vector: Tensor of shape [num_layers, hidden_dim]
 
     Returns:
-        differences: [num_layers-2] の差分
+        differences: Differences of shape [num_layers-2]
     """
     adjacent_sims = compute_adjacent_layer_similarity(vector)
     differences = adjacent_sims[:-1] - adjacent_sims[1:]
     return differences
-

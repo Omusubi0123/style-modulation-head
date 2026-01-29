@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Script to evaluate Style Head Zero Ablation
-# Style Headを累積的にZero Ablationして、生成される文章の変化を調べる
+# Investigate how generated text changes when cumulatively zero-ablating style heads
 # 
-# 使い方:
+# Usage:
 #   bash scripts/run_eval_style_head_ablation.sh
 
 set -o pipefail  # Ensure pipelines fail if any command fails
@@ -19,8 +19,7 @@ MODELS=(
 )
 
 # Traits to evaluate
-# TRAITS=("evil" "sycophantic" "hallucinating" "humorous" "passionate" "loser")
-TRAITS=("loser")
+TRAITS=("evil" "sycophantic" "hallucinating" "humorous" "passionate" "loser")
 
 # Judge model
 JUDGE_MODEL="gpt-4.1-mini-2025-04-14"
@@ -52,11 +51,7 @@ mkdir -p logs
 mkdir -p "$OUTPUT_BASE_DIR"
 
 # Log file
-<<<<<<< HEAD
 LOG_FILE="logs/eval_style_head_ablation_${POSITIONS}_$(date +%Y%m%d_%H%M%S).log"
-=======
-LOG_FILE="logs/eval_style_head_ablation_all_$(date +%Y%m%d_%H%M%S).log"
->>>>>>> 6e68204780cd30a827ec3e227d64b4847e1e7888
 
 echo "Starting Style Head Ablation Evaluation at $(date)" | tee -a $LOG_FILE
 echo "Models: ${MODELS[*]}" | tee -a $LOG_FILE
@@ -106,7 +101,7 @@ run_evaluation() {
     echo "Output directory: $output_dir" | tee -a $LOG_FILE
     
     # Build command
-    local cmd="CUDA_VISIBLE_DEVICES=$gpu PYTHONPATH=. uv run python eval/eval_style_head_ablation.py"
+    local cmd="CUDA_VISIBLE_DEVICES=$gpu PYTHONPATH=. uv run python src/eval/eval_style_head_ablation.py"
     cmd+=" --model \"$model\""
     cmd+=" --trait \"$trait\""
     cmd+=" --output_dir \"$output_dir\""
@@ -130,10 +125,10 @@ run_evaluation() {
     echo "$eval_output" | tee -a $LOG_FILE
     
     if [ $eval_exit_code -eq 0 ]; then
-        echo "✓ Successfully completed: $model, $trait" | tee -a $LOG_FILE
+        echo "Successfully completed: $model, $trait" | tee -a $LOG_FILE
         return 0
     else
-        echo "✗ Failed: $model, $trait" | tee -a $LOG_FILE
+        echo "Failed: $model, $trait" | tee -a $LOG_FILE
         return 1
     fi
 }
@@ -189,7 +184,7 @@ echo "Completed at $(date)" | tee -a $LOG_FILE
 
 if [ ${#skipped_models[@]} -gt 0 ]; then
     echo "" | tee -a $LOG_FILE
-    echo "⏭️  Skipped models (no style head CSV):" | tee -a $LOG_FILE
+    echo "Skipped models (no style head CSV):" | tee -a $LOG_FILE
     for skipped in "${skipped_models[@]}"; do
         echo "  - $skipped" | tee -a $LOG_FILE
     done
@@ -197,14 +192,13 @@ fi
 
 if [ ${#failed_evaluations[@]} -gt 0 ]; then
     echo "" | tee -a $LOG_FILE
-    echo "⚠️  Failed evaluations:" | tee -a $LOG_FILE
+    echo "Failed evaluations:" | tee -a $LOG_FILE
     for failed in "${failed_evaluations[@]}"; do
         echo "  - $failed" | tee -a $LOG_FILE
     done
     exit 1
 else
     echo "" | tee -a $LOG_FILE
-    echo "🎉 All style head ablation evaluations completed successfully!" | tee -a $LOG_FILE
+    echo "All style head ablation evaluations completed successfully!" | tee -a $LOG_FILE
     exit 0
 fi
-
