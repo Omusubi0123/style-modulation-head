@@ -1,7 +1,7 @@
 """
-eval_persona_steer_head.py - ヘッド単位のステアリング評価
+eval_persona_steer_head.py - Head-level steering evaluation
 
-特定の層の特定のヘッドのみをステアリングして評価を行う。
+Perform evaluation by steering only specific heads in a specific layer.
 """
 
 import asyncio
@@ -39,8 +39,8 @@ async def eval_batched(
     max_tokens=1000,
     steering_type="response",
 ):
-    """すべての質問を一括処理して高速な推論を実現する"""
-    # 全プロンプトを収集
+    """Process all questions in batch for fast inference"""
+    # Collect all prompts
     all_paraphrases = []
     all_conversations = []
     question_indices = []
@@ -53,7 +53,7 @@ async def eval_batched(
 
     print(f"Generating {len(all_conversations)} responses in a single batch...")
 
-    # 回答を生成
+    # Generate answers
     if coef != 0 and vector is not None and layer is not None and head_indices is not None:
         prompts, answers = sample_with_head_steering(
             llm,
@@ -77,7 +77,7 @@ async def eval_batched(
             max_tokens=max_tokens,
         )
 
-    # ジャッジ評価を実行
+    # Run judge evaluations
     question_dfs = await run_judge_evaluations(
         questions,
         all_paraphrases,
@@ -110,27 +110,27 @@ def main(
     version="extract",
     overwrite=False,
 ):
-    """Head steeringでの評価を実行する
+    """Execute evaluation with head steering
 
     Args:
-        model: 評価するモデル名
-        trait: 評価する特性名
-        output_path: 結果を保存するCSVファイルパス
-        coef: ステアリング係数（デフォルト: 0）
-        vector_path: ステアリングベクトルのパス（オプション）
-        layer: ステアリングレイヤー（オプション）
-        head_indices: ステアリング対象のヘッドインデックス（カンマ区切りの文字列または整数リスト）
-        steering_type: ステアリングタイプ（デフォルト: "response"）
-        max_tokens: 最大生成トークン数（デフォルト: 1000）
-        n_per_question: 質問あたりのサンプル数（デフォルト: 5）
-        batch_process: バッチ処理を使用するか（デフォルト: True）
-        max_concurrent_judges: 最大同時判定数（デフォルト: 4）
-        batch_size: バッチサイズ（デフォルト: 100）
-        persona_instruction_type: ペルソナ指示タイプ（オプション）
-        assistant_name: アシスタント名（オプション）
-        judge_model: 判定用モデル名
-        version: データバージョン（デフォルト: "extract"）
-        overwrite: 既存ファイルを上書きするか（デフォルト: False）
+        model: Model name to evaluate
+        trait: Trait name to evaluate
+        output_path: CSV file path to save results
+        coef: Steering coefficient (default: 0)
+        vector_path: Path to steering vector (optional)
+        layer: Steering layer (optional)
+        head_indices: Head indices to steer (comma-separated string or integer list)
+        steering_type: Steering type (default: "response")
+        max_tokens: Maximum generation tokens (default: 1000)
+        n_per_question: Samples per question (default: 5)
+        batch_process: Use batch processing (default: True)
+        max_concurrent_judges: Maximum concurrent judges (default: 4)
+        batch_size: Batch size (default: 100)
+        persona_instruction_type: Persona instruction type (optional)
+        assistant_name: Assistant name (optional)
+        judge_model: Judge model name
+        version: Data version (default: "extract")
+        overwrite: Overwrite existing file (default: False)
     """
     if os.path.exists(output_path) and not overwrite:
         print(f"Output path {output_path} already exists, skipping...")
@@ -138,12 +138,12 @@ def main(
         print_results(df, trait)
         return
 
-    # head_indicesが文字列の場合はパース
+    # Parse head_indices if string
     if isinstance(head_indices, str):
         head_indices = [int(x.strip()) for x in head_indices.split(",")]
     if isinstance(head_indices, int):
         head_indices = [head_indices]
-    if isinstance(head_indices, tuple):  # Fireがカンマ区切りの文字列をタプルに変換した場合
+    if isinstance(head_indices, tuple):  # Fire may convert comma-separated string to tuple
         head_indices = list(head_indices)
 
     print(f"Output path: {output_path}")
@@ -228,7 +228,7 @@ def main(
             outputs.append(df)
         outputs = pd.concat(outputs)
 
-    # 結果にヘッド情報を追加
+    # Add head info to results
     if head_indices is not None:
         outputs["head_indices"] = str(head_indices)
 

@@ -1,13 +1,13 @@
 """
-eval_persona_steer_residual_stream.py - Residual Streamへのsteering評価
+eval_persona_steer_residual_stream.py - Residual Stream steering evaluation
 
-Residual Streamの特定位置にsteeringベクトルを加算して評価を行う。
+Add steering vectors to specific positions in the Residual Stream for evaluation.
 
-ステアリング位置:
-- post_attention: Attention加算後のresidual stream
-- post_mlp: MLP加算後のresidual stream
+Steering positions:
+- post_attention: Residual stream after attention addition
+- post_mlp: Residual stream after MLP addition
 
-使い方:
+Usage:
     python eval/eval_persona_steer_residual_stream.py \
         --model Qwen/Qwen2.5-7B-Instruct \
         --trait evil \
@@ -17,24 +17,24 @@ Residual Streamの特定位置にsteeringベクトルを加算して評価を行
         --residual_position post_attention \
         --coef 1.5
         
-Residual Stream位置の対応関係:
+Residual Stream position correspondence:
 - post_attention (layer N): 
-  - ベクトル: mlp_layernorm.pt（= attention後residual streamのPersona Vector方向）
-  - 加算位置: N層目のattention出力（attn_output）
-  - 効果: attention出力にsteeringが加わり、residual加算されるため、
-          attention後のresidual streamにsteeringと同等の効果
+  - Vector: mlp_layernorm.pt (= Persona Vector direction in post-attention residual stream)
+  - Addition position: Layer N attention output (attn_output)
+  - Effect: Steering added to attention output propagates through residual addition,
+            resulting in equivalent effect on post-attention residual stream
   
 - post_mlp (layer N):
-  - ベクトル: attn_layernorm.pt（= MLP後residual stream = 次層入力のPersona Vector方向）
-  - 加算位置: N層目のMLP出力（mlp_output）
-  - 効果: MLP出力にsteeringが加わり、residual加算されるため、
-          MLP後のresidual streamにsteeringと同等の効果
+  - Vector: attn_layernorm.pt (= Post-MLP residual stream = next layer input Persona Vector direction)
+  - Addition position: Layer N MLP output (mlp_output)
+  - Effect: Steering added to MLP output propagates through residual addition,
+            resulting in equivalent effect on post-MLP residual stream
 
-重要: 
-- ベクトル（何を加えるか）: residual streamの方向（layernorm入力で抽出）
-- 加算位置（どこに加えるか）: サブモジュール出力（residualに伝播させるため）
-- layernorm入力へのsteeringではresidual connectionに伝播しないため、
-  サブモジュール出力（attn_output, mlp_output）へのsteeringを使用する。
+Important: 
+- Vector (what to add): Residual stream direction (extracted at layernorm input)
+- Addition position (where to add): Submodule output (to propagate through residual)
+- Steering at layernorm input does not propagate through residual connection,
+  so we use submodule output (attn_output, mlp_output) steering.
 """
 
 import asyncio
@@ -59,11 +59,11 @@ config = setup_credentials()
 
 
 def _residual_to_block_type(residual_position: str) -> str:
-    """Residual position を block_steering_type に変換する
+    """Convert residual position to block_steering_type
 
-    サブモジュール出力へのsteeringを使用（residual connectionに伝播させるため）
-    - post_attention: attention出力にsteering → residual加算でattention後residual streamに反映
-    - post_mlp: MLP出力にsteering → residual加算でMLP後residual streamに反映
+    Use submodule output steering (to propagate through residual connection)
+    - post_attention: Steer attention output → propagates to post-attention residual stream via residual addition
+    - post_mlp: Steer MLP output → propagates to post-MLP residual stream via residual addition
     """
     if residual_position == "post_attention":
         return "attn_output"
@@ -91,10 +91,10 @@ async def eval_batched(
     steering_type="response",
     renorm_after_steering=False,
 ):
-    """すべての質問を一括処理して高速な推論を実現する"""
+    """Process all questions in batch for fast inference"""
     block_steering_type = _residual_to_block_type(residual_position)
 
-    # 全プロンプトを収集
+    # Collect all prompts
     all_paraphrases = []
     all_conversations = []
     question_indices = []
@@ -107,7 +107,7 @@ async def eval_batched(
 
     print(f"Generating {len(all_conversations)} responses in a single batch...")
 
-    # 回答を生成
+    # Generate answers
     if coef != 0 and vector is not None and layer is not None:
         prompts, answers = sample_with_block_steering(
             llm,
@@ -132,7 +132,7 @@ async def eval_batched(
             max_tokens=max_tokens,
         )
 
-    # ジャッジ評価を実行
+    # Run judge evaluations
     question_dfs = await run_judge_evaluations(
         questions,
         all_paraphrases,
@@ -166,28 +166,28 @@ def main(
     overwrite=False,
     renorm_after_steering=False,
 ):
-    """Residual Streamへのsteeringでの評価を実行する
+    """Execute evaluation with Residual Stream steering
 
     Args:
-        model: 評価するモデル名
-        trait: 評価する特性名
-        output_path: 結果を保存するCSVファイルパス
-        coef: ステアリング係数（デフォルト: 0）
-        vector_path: ステアリングベクトルのパス（オプション）
-        layer: ステアリングレイヤー（オプション）
-        residual_position: Residual Stream位置（"post_attention" or "post_mlp"）
-        steering_type: ステアリングタイプ（デフォルト: "response"）
-        max_tokens: 最大生成トークン数（デフォルト: 1000）
-        n_per_question: 質問あたりのサンプル数（デフォルト: 5）
-        batch_process: バッチ処理を使用するか（デフォルト: True）
-        max_concurrent_judges: 最大同時判定数（デフォルト: 4）
-        batch_size: バッチサイズ（デフォルト: 100）
-        persona_instruction_type: ペルソナ指示タイプ（オプション）
-        assistant_name: アシスタント名（オプション）
-        judge_model: 判定用モデル名
-        version: データバージョン（デフォルト: "extract"）
-        overwrite: 既存ファイルを上書きするか（デフォルト: False）
-        renorm_after_steering: ステアリング後にノルムをリノームするか
+        model: Model name to evaluate
+        trait: Trait name to evaluate
+        output_path: CSV file path to save results
+        coef: Steering coefficient (default: 0)
+        vector_path: Path to steering vector (optional)
+        layer: Steering layer (optional)
+        residual_position: Residual Stream position ("post_attention" or "post_mlp")
+        steering_type: Steering type (default: "response")
+        max_tokens: Maximum generation tokens (default: 1000)
+        n_per_question: Samples per question (default: 5)
+        batch_process: Use batch processing (default: True)
+        max_concurrent_judges: Maximum concurrent judges (default: 4)
+        batch_size: Batch size (default: 100)
+        persona_instruction_type: Persona instruction type (optional)
+        assistant_name: Assistant name (optional)
+        judge_model: Judge model name
+        version: Data version (default: "extract")
+        overwrite: Overwrite existing file (default: False)
+        renorm_after_steering: Renormalize norm after steering
     """
     if os.path.exists(output_path) and not overwrite:
         print(f"Output path {output_path} already exists, skipping...")

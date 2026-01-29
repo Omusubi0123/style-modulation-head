@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# run_cosine_similarity.sh - Residual Stream Cosine Similarity分析のサンプル実行
+# run_cosine_similarity.sh - Sample execution for Residual Stream Cosine Similarity analysis
 #
-# 使い方:
+# Usage:
 #   ./src/layer_analysis/run_cosine_similarity.sh
 
 set -e
 
-# 設定
+# Configuration
 MODEL="Qwen/Qwen2.5-7B-Instruct"
 # MODEL="meta-llama/Llama-3.1-8B-Instruct"
 VECTORS_DIR="data/persona_vectors"
@@ -18,18 +18,17 @@ echo "=== Cosine Similarity Analysis ==="
 echo "Model: $MODEL"
 echo "Output: $OUTPUT_DIR"
 
-# 全traitの分析
+# Analyze all traits
 PYTHONPATH=. uv run python -m src.layer_analysis.cosine_similarity.main analyze_all \
     --model_name "$MODEL" \
     --persona_vectors_dir "$VECTORS_DIR" \
     --output_dir "$OUTPUT_DIR" \
     --vector_type "$VECTOR_TYPE"
 
-# 単一traitの分析例
+# Single trait analysis example
 # PYTHONPATH=. uv run python -m src.layer_analysis.cosine_similarity.main analyze_trait \
 #     --model_name "$MODEL" \
 #     --trait "evil" \
 #     --stream_type "input"
 
 echo "=== Done ==="
-

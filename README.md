@@ -1,4 +1,4 @@
-# Style Modulation Head
+# Steering at the Source: Style Modulation Heads for Robust Persona Control
 
 A research toolkit for analyzing and steering persona-related behaviors in Large Language Models through activation engineering at various positions (residual stream, attention output, MLP output, and individual attention heads).
 
@@ -33,7 +33,7 @@ Custom traits can be added by creating new JSON files in `data_generation/trait_
 
 ### Installation
 
-1. Clone the repository:
+1. Clone the repository: (after the paper review)
 ```bash
 git clone https://github.com/your-repo/style-modulation-head.git
 cd style-modulation-head
@@ -265,17 +265,6 @@ The evaluation uses an LLM-as-judge approach with two metrics:
 
 The goal is to maximize trait score while maintaining high coherency.
 
-## Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@misc{style-modulation-head,
-  title={Style Modulation Head: Analyzing and Steering Persona Behaviors in LLMs},
-  year={2026},
-  url={https://github.com/your-repo/style-modulation-head}
-}
-```
 
 ## License
 
