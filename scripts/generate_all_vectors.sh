@@ -95,7 +95,7 @@ for model in "${MODELS[@]}"; do
         # Step 2: Generate all vector types
         # Transformer block output
         log "Generating block output vectors..."
-        run_python src/generate_vec.py \
+        run_python src/generate_vec/generate_vec.py \
             --model_name "$model" \
             --pos_path "$pos_path" \
             --neg_path "$neg_path" \
@@ -105,7 +105,7 @@ for model in "${MODELS[@]}"; do
         
         # Attention pre-O projection
         log "Generating attention pre-O projection vectors..."
-        run_python src/generate_vec_attn.py \
+        run_python src/generate_vec/generate_vec_attn.py \
             --model_name "$model" \
             --pos_path "$pos_path" \
             --neg_path "$neg_path" \
@@ -115,7 +115,7 @@ for model in "${MODELS[@]}"; do
         
         # Block-level (attn/mlp input/output, layernorms)
         log "Generating block-level vectors..."
-        run_python src/generate_vec_block.py \
+        run_python src/generate_vec/generate_vec_block.py \
             --model_name "$model" \
             --pos_path "$pos_path" \
             --neg_path "$neg_path" \
