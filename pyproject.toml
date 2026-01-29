@@ -1,0 +1,57 @@
+[project]
+name = "style-modulation-head"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+dependencies = [
+    "torch==2.7.1",
+    "vllm>=0.10.1.1",
+    "transformers>=4.56.1",
+    "accelerate>=1.7.0",
+    "fire>=0.7.1",
+    "datasets>=4.0.0",
+    "pandas>=2.3.2",
+    "openai>=1.107.1",
+    "pydantic>=2.11.7",
+    "peft>=0.17.1",
+    "setuptools==80.9.0",
+    "isort>=6.0.1",
+    "black>=25.1.0",
+    "trl>=0.23.0",
+    "unsloth>=2025.7.2",
+    "backoff>=2.2.1",
+    "matplotlib>=3.7.0",
+    "scikit-learn>=1.5.0",
+    "scipy>=1.14.0",
+    "seaborn>=0.13.0",
+    "numpy>=2.0.0",
+    "umap-learn>=0.5.9.post2",
+    "absl-py>=2.3.1",
+    "langdetect>=1.0.9",
+    "immutabledict>=4.2.2",
+    "nltk>=3.9.2",
+]
+
+[tool.isort]
+profile = "black"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
+
+[tool.uv]
+extra-index-url = [
+    "https://pypi.nvidia.com",
+]
