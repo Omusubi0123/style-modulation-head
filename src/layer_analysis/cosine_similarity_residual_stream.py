@@ -8,7 +8,6 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import seaborn as sns  # type: ignore
 import torch

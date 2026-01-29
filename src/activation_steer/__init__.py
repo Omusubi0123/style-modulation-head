@@ -3,26 +3,40 @@ activation_steer - Activation Steering/Ablation用モジュール
 
 モデルの特定レイヤーに対してステアリングベクトルを加算したり、
 特定方向の成分を除去したりする機能を提供する。
+
+使用例（直接import推奨）:
+    from src.activation_steer.activation_steer import ActivationSteerer
+    from src.activation_steer.activation_steer import ActivationSteererBlock
+    from src.activation_steer.activation_steer_head import ActivationSteererHead
+    from src.activation_steer.base.modifier import BaseActivationModifier
 """
 
-from .activation_ablation import ActivationAblator, ActivationAblatorMultiple
-from .activation_ablator_head import (
+# 後方互換性のためのエクスポート
+from src.activation_steer.activation_ablation import (
+    ActivationAblator,
+    ActivationAblatorMultiple,
+)
+from src.activation_steer.activation_ablator_head import (
     ActivationAblatorHead,
     ActivationAblatorHeadMultiple,
     create_head_ablation_instructions,
     load_style_heads_from_csv,
 )
-from .activation_steer import (
+from src.activation_steer.activation_steer import (
     ActivationSteerer,
     ActivationSteererBlock,
     ActivationSteererMultiple,
 )
-from .activation_steer_head import (
+from src.activation_steer.activation_steer_head import (
     ActivationSteererHead,
     ActivationSteererHeadMultiple,
     create_head_steering_instructions,
 )
-from .base import BaseActivationAblator, BaseActivationModifier, BaseActivationSteerer
+from src.activation_steer.base import (
+    BaseActivationAblator,
+    BaseActivationModifier,
+    BaseActivationSteerer,
+)
 
 __all__ = [
     # Base classes
@@ -44,4 +58,3 @@ __all__ = [
     "create_head_ablation_instructions",
     "load_style_heads_from_csv",
 ]
-

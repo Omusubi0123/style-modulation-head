@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 import torch
 
-from .base import BaseActivationSteerer
+from src.activation_steer.base.steerer import BaseActivationSteerer
 
 
 class ActivationSteerer(BaseActivationSteerer):

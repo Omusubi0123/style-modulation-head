@@ -10,7 +10,7 @@ from typing import List, Sequence
 
 import torch
 
-from .base import BaseActivationModifier
+from src.activation_steer.base.modifier import BaseActivationModifier
 
 
 class ActivationAblatorHead(BaseActivationModifier):

@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 import torch
 
-from .base import BaseActivationAblator
+from src.activation_steer.base.ablator import BaseActivationAblator
 
 
 class ActivationAblator(BaseActivationAblator):

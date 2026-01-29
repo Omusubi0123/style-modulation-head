@@ -11,11 +11,11 @@ import torch
 from tqdm import trange
 from vllm import SamplingParams
 
-from src.activation_steer import (
+from src.activation_steer.activation_steer import (
     ActivationSteerer,
     ActivationSteererBlock,
-    ActivationSteererHead,
 )
+from src.activation_steer.activation_steer_head import ActivationSteererHead
 from src.chat_template_utils import apply_chat_template_safe
 
 

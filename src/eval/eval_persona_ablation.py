@@ -19,10 +19,10 @@ from tqdm import tqdm, trange
 
 from eval.model_utils import load_model, load_vllm_model
 from eval.prompts import Prompts
-from src.activation_ablation import ActivationAblator
+from src.activation_steer.activation_ablation import ActivationAblator
 from src.chat_template_utils import apply_chat_template_safe
 from src.config import setup_credentials
-from src.judge import OpenAiJudge
+from src.eval.common.openai_judge import OpenAiJudge
 
 logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.ERROR)

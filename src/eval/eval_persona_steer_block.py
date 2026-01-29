@@ -12,13 +12,11 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
-from eval.common import (
-    load_persona_questions,
-    print_results,
-    run_judge_evaluations,
-)
-from eval.model_utils import load_model, load_vllm_model
-from eval.sampling import sample_vllm, sample_with_block_steering
+from src.eval.common.judge import run_judge_evaluations
+from src.eval.common.loaders import load_persona_questions
+from src.eval.common.utils import print_results
+from src.eval.model_utils import load_model, load_vllm_model
+from src.eval.sampling import sample_vllm, sample_with_block_steering
 from src.config import setup_credentials
 
 logging.getLogger("openai").setLevel(logging.WARNING)

@@ -29,13 +29,13 @@ from tqdm import tqdm, trange
 
 from eval.model_utils import load_model
 from eval.prompts import Prompts
-from src.activation_ablator_head import (
+from src.activation_steer.activation_ablator_head import (
     ActivationAblatorHeadMultiple,
     load_style_heads_from_csv,
 )
 from src.chat_template_utils import apply_chat_template_safe
 from src.config import setup_credentials
-from src.judge import OpenAiJudge
+from src.eval.common.openai_judge import OpenAiJudge
 
 logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -220,7 +220,7 @@ class Question:
         judge_prompts: dict,
         temperature: float = 1,
         system: str = None,
-        judge: str = "gpt-4o",
+        judge: str = "gpt-4.1-mini-2025-04-14",
         judge_eval_type: str = "0_100",
         **ignored_extra_args,
     ):
