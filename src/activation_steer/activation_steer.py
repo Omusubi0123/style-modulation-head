@@ -22,10 +22,10 @@ class ActivationSteerer(BaseActivationSteerer):
             print(f"[ActivationSteerer] hooking layer {self.layer_idx}")
         self._handle = layer.register_forward_hook(self._hook_fn)
 
-    def _hook_fn(self, module, ins, out):
+    def _hook_fn(self, module: object, ins: object, out: object):
         """Forward hook: apply steering to output tensor"""
 
-        def _process(t):
+        def _process(t: torch.Tensor) -> torch.Tensor:
             return self._apply_steering(t)
 
         # out may be tensor or tuple/list
@@ -112,7 +112,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
                 f"steering_type must be one of {self.VALID_STEERING_TYPES}"
             )
 
-    def _locate_target_module(self):
+    def _locate_target_module(self) -> tuple[torch.nn.Module, str]:
         """Identify target module based on steering type
 
         Returns:
@@ -177,7 +177,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
         else:
             self._handle = target_module.register_forward_hook(self._forward_hook_fn)
 
-    def _pre_hook_fn(self, module, ins):
+    def _pre_hook_fn(self, module: object, ins: object):
         """Pre-hook: apply steering to input tensor"""
         if isinstance(ins, tuple):
             if torch.is_tensor(ins[0]):
@@ -188,7 +188,7 @@ class ActivationSteererBlock(BaseActivationSteerer):
             return self._apply_steering(ins)
         return ins
 
-    def _forward_hook_fn(self, module, ins, out):
+    def _forward_hook_fn(self, module: object, ins: object, out: object):
         """Forward hook: apply steering to output tensor"""
         if torch.is_tensor(out):
             new_out = self._apply_steering(out)

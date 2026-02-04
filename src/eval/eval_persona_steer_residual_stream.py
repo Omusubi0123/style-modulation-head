@@ -45,12 +45,12 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
+from src.config import setup_credentials
 from src.eval.common.judge import run_judge_evaluations
 from src.eval.common.loaders import load_persona_questions
 from src.eval.common.utils import print_results
 from src.eval.model_utils import load_model, load_vllm_model
 from src.eval.sampling import sample_vllm, sample_with_block_steering
-from src.config import setup_credentials
 
 logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -77,19 +77,19 @@ def _residual_to_block_type(residual_position: str) -> str:
 
 
 async def eval_batched(
-    questions,
-    llm,
-    tokenizer,
-    coef,
-    vector=None,
-    layer=None,
-    residual_position="post_attention",
-    batch_size=100,
-    n_per_question=5,
-    max_concurrent_judges=4,
-    max_tokens=1000,
-    steering_type="response",
-    renorm_after_steering=False,
+    questions: list,
+    llm: object,
+    tokenizer: object,
+    coef: float,
+    vector: torch.Tensor | None = None,
+    layer: int | None = None,
+    residual_position: str = "post_attention",
+    batch_size: int = 100,
+    n_per_question: int = 5,
+    max_concurrent_judges: int = 4,
+    max_tokens: int = 1000,
+    steering_type: str = "response",
+    renorm_after_steering: bool = False,
 ):
     """Process all questions in batch for fast inference"""
     block_steering_type = _residual_to_block_type(residual_position)
@@ -146,25 +146,25 @@ async def eval_batched(
 
 
 def main(
-    model,
-    trait,
-    output_path,
-    coef=0,
-    vector_path=None,
-    layer=None,
-    residual_position="post_attention",
-    steering_type="response",
-    max_tokens=1000,
-    n_per_question=5,
-    batch_process=True,
-    max_concurrent_judges=4,
-    batch_size=100,
-    persona_instruction_type=None,
-    assistant_name=None,
-    judge_model="gpt-4.1-mini-2025-04-14",
-    version="extract",
-    overwrite=False,
-    renorm_after_steering=False,
+    model: str,
+    trait: str,
+    output_path: str,
+    coef: float = 0,
+    vector_path: str | None = None,
+    layer: int | None = None,
+    residual_position: str = "post_attention",
+    steering_type: str = "response",
+    max_tokens: int = 1000,
+    n_per_question: int = 5,
+    batch_process: bool = True,
+    max_concurrent_judges: int = 4,
+    batch_size: int = 100,
+    persona_instruction_type: str | None = None,
+    assistant_name: str | None = None,
+    judge_model: str = "gpt-4.1-mini-2025-04-14",
+    version: str = "extract",
+    overwrite: bool = False,
+    renorm_after_steering: bool = False,
 ):
     """Execute evaluation with Residual Stream steering
 
@@ -244,34 +244,47 @@ def main(
         outputs = []
         for question in tqdm(questions, desc=f"Processing {trait} questions"):
             paraphrases, conversations = question.get_input(n_per_question)
-            
+
             if coef != 0 and vector is not None and layer is not None:
                 prompts, answers = sample_with_block_steering(
-                    llm, tokenizer, conversations, vector, layer, coef,
+                    llm,
+                    tokenizer,
+                    conversations,
+                    vector,
+                    layer,
+                    coef,
                     block_steering_type=block_steering_type,
-                    temperature=question.temperature, max_tokens=max_tokens,
+                    temperature=question.temperature,
+                    max_tokens=max_tokens,
                     steering_type=steering_type,
                     renorm_after_steering=renorm_after_steering,
                 )
             else:
                 prompts, answers = sample_vllm(
-                    llm, tokenizer, conversations,
-                    temperature=question.temperature, max_tokens=max_tokens,
+                    llm,
+                    tokenizer,
+                    conversations,
+                    temperature=question.temperature,
+                    max_tokens=max_tokens,
                 )
-            
+
             df_data = [
                 dict(question=q, prompt=p, answer=a, question_id=question.id)
                 for q, a, p in zip(paraphrases, answers, prompts)
             ]
             df = pd.DataFrame(df_data)
-            
+
             for score, judge in question.judges.items():
-                scores = asyncio.run(asyncio.gather(*[
-                    judge(question=q, answer=a)
-                    for q, a in zip(paraphrases, answers)
-                ]))
+                scores = asyncio.run(
+                    asyncio.gather(
+                        *[
+                            judge(question=q, answer=a)
+                            for q, a in zip(paraphrases, answers)
+                        ]
+                    )
+                )
                 df[score] = scores
-            
+
             outputs.append(df)
         outputs = pd.concat(outputs)
 

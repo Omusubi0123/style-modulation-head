@@ -28,11 +28,11 @@ from src.generate_vec.common import (
 
 
 def get_hidden_block_inputs(
-    model,
-    tokenizer,
+    model: object,
+    tokenizer: object,
     prompts: list[str],
     responses: list[str],
-    layer_list: list[int] = None,
+    layer_list: list[int] | None = None,
 ):
     """プロンプトと応答から各レイヤーのblock入力・出力とlayer norm入力を抽出する
 
@@ -52,9 +52,7 @@ def get_hidden_block_inputs(
         )
 
     if len(prompts) != len(responses):
-        raise ValueError(
-            f"Prompts and responses must have the same length"
-        )
+        raise ValueError(f"Prompts and responses must have the same length")
 
     print(f"Processing {len(prompts)} prompt-response pairs...")
 
@@ -86,10 +84,10 @@ def get_hidden_block_inputs(
     layer_list_module = locate_layer_list(model)
     handles = []
 
-    def make_hook_fn(layer_idx, hook_type, is_pre_hook=False):
+    def make_hook_fn(layer_idx: int, hook_type: str, is_pre_hook: bool = False):
         """フック関数を生成"""
 
-        def hook_fn(module, input, output=None):
+        def hook_fn(module: object, input: object, output: object | None = None):
             # 対象テンソルを決定
             target_tensor = None
 
@@ -127,8 +125,12 @@ def get_hidden_block_inputs(
                                 .detach()
                                 .cpu()
                             )
-                            data[hook_type]["prompt_avg"][layer_idx].append(prompt_avg_vec)
-                            data[hook_type]["prompt_last"][layer_idx].append(prompt_last_vec)
+                            data[hook_type]["prompt_avg"][layer_idx].append(
+                                prompt_avg_vec
+                            )
+                            data[hook_type]["prompt_last"][layer_idx].append(
+                                prompt_last_vec
+                            )
 
                         if seq_len > prompt_len:
                             response_avg_vec = (
@@ -138,7 +140,9 @@ def get_hidden_block_inputs(
                                 .detach()
                                 .cpu()
                             )
-                            data[hook_type]["response_avg"][layer_idx].append(response_avg_vec)
+                            data[hook_type]["response_avg"][layer_idx].append(
+                                response_avg_vec
+                            )
 
                 del target_tensor
 
@@ -149,7 +153,12 @@ def get_hidden_block_inputs(
         layer = layer_list_module[layer_idx]
 
         # Attention前のlayer normを探す
-        attn_ln_attrs = ["input_layernorm", "ln_1", "layer_norm", "pre_attention_layernorm"]
+        attn_ln_attrs = [
+            "input_layernorm",
+            "ln_1",
+            "layer_norm",
+            "pre_attention_layernorm",
+        ]
         attn_ln = None
         for attr in attn_ln_attrs:
             if hasattr(layer, attr):
@@ -182,38 +191,54 @@ def get_hidden_block_inputs(
 
         # フックを登録
         if attn_ln is not None:
-            handles.append(attn_ln.register_forward_pre_hook(
-                make_hook_fn(layer_idx, "attn_layernorm_input", is_pre_hook=True)
-            ))
-            handles.append(attn_ln.register_forward_hook(
-                make_hook_fn(layer_idx, "attn_input", is_pre_hook=False)
-            ))
+            handles.append(
+                attn_ln.register_forward_pre_hook(
+                    make_hook_fn(layer_idx, "attn_layernorm_input", is_pre_hook=True)
+                )
+            )
+            handles.append(
+                attn_ln.register_forward_hook(
+                    make_hook_fn(layer_idx, "attn_input", is_pre_hook=False)
+                )
+            )
         elif attn_block is not None:
-            handles.append(attn_block.register_forward_pre_hook(
-                make_hook_fn(layer_idx, "attn_input", is_pre_hook=True)
-            ))
+            handles.append(
+                attn_block.register_forward_pre_hook(
+                    make_hook_fn(layer_idx, "attn_input", is_pre_hook=True)
+                )
+            )
 
         if attn_block is not None:
-            handles.append(attn_block.register_forward_hook(
-                make_hook_fn(layer_idx, "attn_output", is_pre_hook=False)
-            ))
+            handles.append(
+                attn_block.register_forward_hook(
+                    make_hook_fn(layer_idx, "attn_output", is_pre_hook=False)
+                )
+            )
 
         if mlp_ln is not None:
-            handles.append(mlp_ln.register_forward_pre_hook(
-                make_hook_fn(layer_idx, "mlp_layernorm_input", is_pre_hook=True)
-            ))
-            handles.append(mlp_ln.register_forward_hook(
-                make_hook_fn(layer_idx, "mlp_input", is_pre_hook=False)
-            ))
+            handles.append(
+                mlp_ln.register_forward_pre_hook(
+                    make_hook_fn(layer_idx, "mlp_layernorm_input", is_pre_hook=True)
+                )
+            )
+            handles.append(
+                mlp_ln.register_forward_hook(
+                    make_hook_fn(layer_idx, "mlp_input", is_pre_hook=False)
+                )
+            )
         elif mlp_block is not None:
-            handles.append(mlp_block.register_forward_pre_hook(
-                make_hook_fn(layer_idx, "mlp_input", is_pre_hook=True)
-            ))
+            handles.append(
+                mlp_block.register_forward_pre_hook(
+                    make_hook_fn(layer_idx, "mlp_input", is_pre_hook=True)
+                )
+            )
 
         if mlp_block is not None:
-            handles.append(mlp_block.register_forward_hook(
-                make_hook_fn(layer_idx, "mlp_output", is_pre_hook=False)
-            ))
+            handles.append(
+                mlp_block.register_forward_hook(
+                    make_hook_fn(layer_idx, "mlp_output", is_pre_hook=False)
+                )
+            )
 
     texts = [p + a for p, a in zip(prompts, responses)]
 
@@ -222,9 +247,9 @@ def get_hidden_block_inputs(
             tqdm(zip(texts, prompts), total=len(texts), desc="Processing samples")
         ):
             with torch.no_grad():
-                inputs = tokenizer(text, return_tensors="pt", add_special_tokens=False).to(
-                    model.device
-                )
+                inputs = tokenizer(
+                    text, return_tensors="pt", add_special_tokens=False
+                ).to(model.device)
                 prompt_len = len(tokenizer.encode(prompt, add_special_tokens=False))
                 current_prompt_len[0] = prompt_len
 
@@ -248,7 +273,9 @@ def get_hidden_block_inputs(
         for layer_idx in layer_list:
             if data[hook_type]["prompt_avg"][layer_idx]:
                 result[hook_type][layer_idx] = {
-                    "prompt_avg": torch.stack(data[hook_type]["prompt_avg"][layer_idx], dim=0),
+                    "prompt_avg": torch.stack(
+                        data[hook_type]["prompt_avg"][layer_idx], dim=0
+                    ),
                     "response_avg": (
                         torch.stack(data[hook_type]["response_avg"][layer_idx], dim=0)
                         if data[hook_type]["response_avg"][layer_idx]
@@ -343,17 +370,26 @@ def save_persona_vector(
 
             if pos_data is not None and neg_data is not None:
                 prompt_avg_diff_list.append(
-                    pos_data["prompt_avg"].mean(0).float() - neg_data["prompt_avg"].mean(0).float()
+                    pos_data["prompt_avg"].mean(0).float()
+                    - neg_data["prompt_avg"].mean(0).float()
                 )
-                if pos_data["response_avg"] is not None and neg_data["response_avg"] is not None:
+                if (
+                    pos_data["response_avg"] is not None
+                    and neg_data["response_avg"] is not None
+                ):
                     response_avg_diff_list.append(
-                        pos_data["response_avg"].mean(0).float() - neg_data["response_avg"].mean(0).float()
+                        pos_data["response_avg"].mean(0).float()
+                        - neg_data["response_avg"].mean(0).float()
                     )
                 else:
                     response_avg_diff_list.append(torch.zeros(hidden_size))
-                if pos_data["prompt_last"] is not None and neg_data["prompt_last"] is not None:
+                if (
+                    pos_data["prompt_last"] is not None
+                    and neg_data["prompt_last"] is not None
+                ):
                     prompt_last_diff_list.append(
-                        pos_data["prompt_last"].mean(0).float() - neg_data["prompt_last"].mean(0).float()
+                        pos_data["prompt_last"].mean(0).float()
+                        - neg_data["prompt_last"].mean(0).float()
                     )
                 else:
                     prompt_last_diff_list.append(torch.zeros(hidden_size))
@@ -367,9 +403,15 @@ def save_persona_vector(
             response_avg_diff = torch.stack(response_avg_diff_list, dim=0)
             prompt_last_diff = torch.stack(prompt_last_diff_list, dim=0)
 
-            torch.save(prompt_avg_diff, f"{save_dir}/{trait}_prompt_avg_diff_{suffix}.pt")
-            torch.save(response_avg_diff, f"{save_dir}/{trait}_response_avg_diff_{suffix}.pt")
-            torch.save(prompt_last_diff, f"{save_dir}/{trait}_prompt_last_diff_{suffix}.pt")
+            torch.save(
+                prompt_avg_diff, f"{save_dir}/{trait}_prompt_avg_diff_{suffix}.pt"
+            )
+            torch.save(
+                response_avg_diff, f"{save_dir}/{trait}_response_avg_diff_{suffix}.pt"
+            )
+            torch.save(
+                prompt_last_diff, f"{save_dir}/{trait}_prompt_last_diff_{suffix}.pt"
+            )
 
     print(f"Persona vectors saved to {save_dir}")
 

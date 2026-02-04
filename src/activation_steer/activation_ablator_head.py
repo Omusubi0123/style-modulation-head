@@ -6,7 +6,7 @@ Zero out the O projection input of specific heads at specific layers
 to remove their contribution.
 """
 
-from typing import List, Sequence
+from typing import Sequence
 
 import torch
 
@@ -25,7 +25,7 @@ class ActivationAblatorHead(BaseActivationModifier):
         model: torch.nn.Module,
         *,
         layer_idx: int = -1,
-        head_indices: List[int] = None,
+        head_indices: list[int] | None = None,
         positions: str = "all",
         debug: bool = False,
     ):
@@ -92,11 +92,11 @@ class ActivationAblatorHead(BaseActivationModifier):
         o_proj = self._locate_o_proj()
         self._handle = o_proj.register_forward_pre_hook(self._hook_fn)
 
-    def _hook_fn(self, module, input):
+    def _hook_fn(self, module: object, input: object):
         """Pre-hook: zero out specified heads on o_proj input"""
         mask = self.head_mask
 
-        def _apply_zero_ablation(t):
+        def _apply_zero_ablation(t: torch.Tensor) -> torch.Tensor:
             if self.positions == "all":
                 return t * mask.to(t.device)
             elif self.positions == "prompt":
@@ -174,7 +174,7 @@ class ActivationAblatorHeadMultiple:
 
 def create_head_ablation_instructions(
     layer_idx: int,
-    head_indices: List[int],
+    head_indices: list[int],
     positions: str = "all",
 ) -> dict:
     """Helper function to create head ablation instructions"""
@@ -185,7 +185,7 @@ def create_head_ablation_instructions(
     }
 
 
-def load_style_heads_from_csv(csv_path: str) -> List[dict]:
+def load_style_heads_from_csv(csv_path: str) -> list[dict]:
     """Load style head information from CSV file
 
     CSV format:
@@ -224,10 +224,12 @@ def load_style_heads_from_csv(csv_path: str) -> List[dict]:
             if row["anti_head"].strip():
                 anti_heads = [int(h.strip()) - 1 for h in row["anti_head"].split(",")]
 
-            style_heads.append({
-                "layer": layer_0based,
-                "cor_heads": cor_heads,
-                "anti_heads": anti_heads,
-            })
+            style_heads.append(
+                {
+                    "layer": layer_0based,
+                    "cor_heads": cor_heads,
+                    "anti_heads": anti_heads,
+                }
+            )
 
     return style_heads

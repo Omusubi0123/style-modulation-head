@@ -4,7 +4,7 @@ activation_steer_head.py - Steering for specific attention heads only
 Apply steering to specific heads' O projection input only.
 """
 
-from typing import List, Sequence, Union
+from typing import Sequence, Union
 
 import torch
 
@@ -25,7 +25,7 @@ class ActivationSteererHead(BaseActivationSteerer):
         *,
         coeff: float = 1.0,
         layer_idx: int = -1,
-        head_indices: List[int] = None,
+        head_indices: list[int] | None = None,
         positions: str = "all",
         debug: bool = False,
     ):
@@ -106,11 +106,11 @@ class ActivationSteererHead(BaseActivationSteerer):
         o_proj = self._locate_o_proj()
         self._handle = o_proj.register_forward_pre_hook(self._hook_fn)
 
-    def _hook_fn(self, module, input):
+    def _hook_fn(self, module: object, input: object):
         """Pre-hook: apply steering to specified heads only on o_proj input"""
         steer = self.coeff * self.masked_vector
 
-        def _add_steering(t):
+        def _add_steering(t: torch.Tensor) -> torch.Tensor:
             if self.positions == "all":
                 return t + steer.to(t.device)
             elif self.positions == "prompt":
@@ -195,7 +195,7 @@ class ActivationSteererHeadMultiple:
 def create_head_steering_instructions(
     steering_vector: torch.Tensor,
     layer_idx: int,
-    head_indices: List[int],
+    head_indices: list[int],
     coeff: float = 1.0,
     positions: str = "all",
 ) -> dict:

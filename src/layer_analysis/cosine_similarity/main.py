@@ -25,7 +25,6 @@ from src.layer_analysis.cosine_similarity.visualize import (
     visualize_residual_stream_similarity,
 )
 
-
 # Default settings
 DEFAULT_PERSONA_VECTORS_DIR = "data/persona_vectors"
 DEFAULT_OUTPUT_DIR = "data/layer_analysis"
@@ -147,7 +146,9 @@ def analyze_all(
 
 
 if __name__ == "__main__":
-    fire.Fire({
-        "analyze_trait": analyze_trait,
-        "analyze_all": analyze_all,
-    })
+    fire.Fire(
+        {
+            "analyze_trait": analyze_trait,
+            "analyze_all": analyze_all,
+        }
+    )

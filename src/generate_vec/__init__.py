@@ -29,4 +29,3 @@ __all__ = [
     "clear_memory",
     "validate_effective_samples",
 ]
-

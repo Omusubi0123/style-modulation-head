@@ -157,8 +157,12 @@ def visualize_adjacent_difference_lineplot(
     fig, ax = plt.subplots(figsize=figsize)
 
     ax.plot(x, y, marker="o", linewidth=2, markersize=4, color="#2563eb")
-    ax.fill_between(x, y, 0, where=(y >= 0), alpha=0.3, color="#3b82f6", interpolate=True)
-    ax.fill_between(x, y, 0, where=(y < 0), alpha=0.3, color="#ef4444", interpolate=True)
+    ax.fill_between(
+        x, y, 0, where=(y >= 0), alpha=0.3, color="#3b82f6", interpolate=True
+    )
+    ax.fill_between(
+        x, y, 0, where=(y < 0), alpha=0.3, color="#ef4444", interpolate=True
+    )
     ax.axhline(y=0, color="gray", linestyle="--", linewidth=1, alpha=0.7)
 
     max_abs = max(abs(y.min()), abs(y.max()), 0.5)

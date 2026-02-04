@@ -21,11 +21,11 @@ from src.generate_vec.common import (
 
 
 def get_hidden_p_and_r(
-    model,
-    tokenizer,
+    model: object,
+    tokenizer: object,
     prompts: list[str],
     responses: list[str],
-    layer_list: list[int] = None,
+    layer_list: list[int] | None = None,
 ):
     """プロンプトと応答から各レイヤーの隠れ状態を抽出する
 

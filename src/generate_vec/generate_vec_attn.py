@@ -36,11 +36,11 @@ from src.generate_vec.common import (
 
 
 def get_attn_pre_o_proj_vectors(
-    model,
-    tokenizer,
+    model: object,
+    tokenizer: object,
     prompts: list[str],
     responses: list[str],
-    layer_list: list[int] = None,
+    layer_list: list[int] | None = None,
 ):
     """OV計算前のV（O projection前のAttention出力）を各層から抽出する
 
@@ -92,10 +92,10 @@ def get_attn_pre_o_proj_vectors(
     # フックハンドルを保存
     handles = []
 
-    def make_hook_fn(layer_idx):
+    def make_hook_fn(layer_idx: int):
         """o_proj入力をキャプチャするフック関数"""
 
-        def hook_fn(module, input, output=None):
+        def hook_fn(module: object, input: object, output: object | None = None):
             hidden_input = None
             if isinstance(input, tuple) and len(input) > 0:
                 hidden_input = input[0]
@@ -211,12 +211,16 @@ def get_attn_pre_o_proj_vectors(
             result["prompt_avg"][layer_idx] = None
 
         if response_avg[layer_idx]:
-            result["response_avg"][layer_idx] = torch.stack(response_avg[layer_idx], dim=0)
+            result["response_avg"][layer_idx] = torch.stack(
+                response_avg[layer_idx], dim=0
+            )
         else:
             result["response_avg"][layer_idx] = None
 
         if prompt_last[layer_idx]:
-            result["prompt_last"][layer_idx] = torch.stack(prompt_last[layer_idx], dim=0)
+            result["prompt_last"][layer_idx] = torch.stack(
+                prompt_last[layer_idx], dim=0
+            )
         else:
             result["prompt_last"][layer_idx] = None
 

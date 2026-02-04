@@ -29,7 +29,9 @@ def inner_product_similarity(vec1: torch.Tensor, vec2: torch.Tensor) -> torch.Te
     return torch.dot(vec1, vec2)
 
 
-def load_o_proj_weights(model_name: str, device: str = "cpu") -> Dict[int, torch.Tensor]:
+def load_o_proj_weights(
+    model_name: str, device: str = "cpu"
+) -> Dict[int, torch.Tensor]:
     """Load O projection weights from model
 
     Args:
@@ -178,6 +180,7 @@ def load_attention_config(vector_dir: str, trait: str) -> Dict:
         return torch.load(attn_config_path, map_location="cpu")
     elif os.path.exists(attn_config_json_path):
         import json
+
         with open(attn_config_json_path, "r") as f:
             return json.load(f)
 

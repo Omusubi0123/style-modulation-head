@@ -191,6 +191,10 @@ def print_top_heads(
 
         if raw_matrix is not None:
             sim_raw = raw_matrix[idx // num_heads, head_idx]
-            print(f"  {rank + 1}. Layer {layer_idx+1}, Head {head_idx+1}: {sim_norm:.4f} (raw: {sim_raw:.2e})")
+            print(
+                f"  {rank + 1}. Layer {layer_idx+1}, Head {head_idx+1}: {sim_norm:.4f} (raw: {sim_raw:.2e})"
+            )
         else:
-            print(f"  {rank + 1}. Layer {layer_idx+1}, Head {head_idx+1}: {sim_norm:.4f}")
+            print(
+                f"  {rank + 1}. Layer {layer_idx+1}, Head {head_idx+1}: {sim_norm:.4f}"
+            )

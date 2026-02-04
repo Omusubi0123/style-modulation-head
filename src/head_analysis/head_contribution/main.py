@@ -287,7 +287,9 @@ def compare_traits(
 
 
 if __name__ == "__main__":
-    fire.Fire({
-        "analyze_trait": analyze_trait,
-        "compare_traits": compare_traits,
-    })
+    fire.Fire(
+        {
+            "analyze_trait": analyze_trait,
+            "compare_traits": compare_traits,
+        }
+    )

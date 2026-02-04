@@ -5,9 +5,9 @@ loaders.py - Data loading utilities
 import json
 from typing import List
 
-from src.eval.prompts import Prompts
 from src.eval.common.question import Question
 from src.eval.common.utils import a_or_an
+from src.eval.prompts import Prompts
 
 
 def load_jsonl(path: str) -> List[dict]:

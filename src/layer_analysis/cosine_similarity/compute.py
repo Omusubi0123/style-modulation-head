@@ -31,7 +31,9 @@ def load_vectors_for_positions(
 
     for layer_position in layer_positions:
         for vector_file in vectors_dir.glob(f"*_{vector_type}_{layer_position}.pt"):
-            trait_name = vector_file.stem.replace(f"_{vector_type}_{layer_position}", "")
+            trait_name = vector_file.stem.replace(
+                f"_{vector_type}_{layer_position}", ""
+            )
 
             try:
                 vector = torch.load(vector_file, weights_only=False, map_location="cpu")

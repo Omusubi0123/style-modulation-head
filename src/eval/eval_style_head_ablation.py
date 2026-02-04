@@ -120,11 +120,13 @@ def sample_with_ablation(
         # 各指示にpositionsを追加
         instructions_with_positions = []
         for inst in ablation_instructions:
-            instructions_with_positions.append({
-                "layer_idx": inst["layer_idx"],
-                "head_indices": inst["head_indices"],
-                "positions": inst.get("positions", positions),
-            })
+            instructions_with_positions.append(
+                {
+                    "layer_idx": inst["layer_idx"],
+                    "head_indices": inst["head_indices"],
+                    "positions": inst.get("positions", positions),
+                }
+            )
 
         # ActivationAblatorHeadMultipleを設定
         ablator = ActivationAblatorHeadMultiple(
@@ -482,7 +484,9 @@ def main(
     style_heads = load_style_heads_from_csv(style_head_csv)
     print(f"Loaded {len(style_heads)} style head entries")
     for i, sh in enumerate(style_heads):
-        print(f"  Entry {i+1}: layer={sh['layer']+1} (1-indexed), cor_heads={[h+1 for h in sh['cor_heads']]} (1-indexed)")
+        print(
+            f"  Entry {i+1}: layer={sh['layer']+1} (1-indexed), cor_heads={[h+1 for h in sh['cor_heads']]} (1-indexed)"
+        )
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -509,8 +513,7 @@ def main(
 
     # ベースライン（アブレーションなし）の評価
     baseline_output_path = os.path.join(
-        output_dir,
-        f"{trait}_baseline_{persona_instruction_type or 'none'}.csv"
+        output_dir, f"{trait}_baseline_{persona_instruction_type or 'none'}.csv"
     )
 
     if os.path.exists(baseline_output_path) and not overwrite:
@@ -537,18 +540,24 @@ def main(
         baseline_df.to_csv(baseline_output_path, index=False)
         print(f"Saved baseline to: {baseline_output_path}")
 
-    print(f"Baseline - {trait}: {baseline_df[trait].mean():.2f} +- {baseline_df[trait].std():.2f}")
-    print(f"Baseline - coherence: {baseline_df['coherence'].mean():.2f} +- {baseline_df['coherence'].std():.2f}")
+    print(
+        f"Baseline - {trait}: {baseline_df[trait].mean():.2f} +- {baseline_df[trait].std():.2f}"
+    )
+    print(
+        f"Baseline - coherence: {baseline_df['coherence'].mean():.2f} +- {baseline_df['coherence'].std():.2f}"
+    )
 
-    summary_results.append({
-        "step": 0,
-        "ablated_layers": "",
-        "ablated_heads": "",
-        f"{trait}_mean": baseline_df[trait].mean(),
-        f"{trait}_std": baseline_df[trait].std(),
-        "coherence_mean": baseline_df["coherence"].mean(),
-        "coherence_std": baseline_df["coherence"].std(),
-    })
+    summary_results.append(
+        {
+            "step": 0,
+            "ablated_layers": "",
+            "ablated_heads": "",
+            f"{trait}_mean": baseline_df[trait].mean(),
+            f"{trait}_std": baseline_df[trait].std(),
+            "coherence_mean": baseline_df["coherence"].mean(),
+            "coherence_std": baseline_df["coherence"].std(),
+        }
+    )
 
     # 累積的にアブレーション
     cumulative_instructions = []
@@ -562,10 +571,12 @@ def main(
             continue
 
         # 累積的に追加
-        cumulative_instructions.append({
-            "layer_idx": layer_idx,
-            "head_indices": head_indices,
-        })
+        cumulative_instructions.append(
+            {
+                "layer_idx": layer_idx,
+                "head_indices": head_indices,
+            }
+        )
 
         # ファイル名を生成
         ablated_layers_str = "_".join(
@@ -573,15 +584,19 @@ def main(
         )
         output_path = os.path.join(
             output_dir,
-            f"{trait}_ablation_step{step}_{ablated_layers_str}_{persona_instruction_type or 'none'}.csv"
+            f"{trait}_ablation_step{step}_{ablated_layers_str}_{persona_instruction_type or 'none'}.csv",
         )
 
         if os.path.exists(output_path) and not overwrite:
             print(f"Step {step} already exists: {output_path}")
             step_df = pd.read_csv(output_path)
         else:
-            print(f"=== Step {step}: Ablating cumulative layers {ablated_layers_str} ===")
-            print(f"  Adding layer {layer_idx+1} (0-indexed: {layer_idx}), heads {[h+1 for h in head_indices]} (0-indexed: {head_indices})")
+            print(
+                f"=== Step {step}: Ablating cumulative layers {ablated_layers_str} ==="
+            )
+            print(
+                f"  Adding layer {layer_idx+1} (0-indexed: {layer_idx}), heads {[h+1 for h in head_indices]} (0-indexed: {head_indices})"
+            )
             print(f"  Total instructions: {len(cumulative_instructions)}")
 
             step_outputs_list = asyncio.run(
@@ -617,21 +632,22 @@ def main(
             for inst in cumulative_instructions
         )
 
-        summary_results.append({
-            "step": step,
-            "ablated_layers": ablated_layers_str,
-            "ablated_heads": ablated_heads_str,
-            f"{trait}_mean": trait_mean,
-            f"{trait}_std": trait_std,
-            "coherence_mean": coherence_mean,
-            "coherence_std": coherence_std,
-        })
+        summary_results.append(
+            {
+                "step": step,
+                "ablated_layers": ablated_layers_str,
+                "ablated_heads": ablated_heads_str,
+                f"{trait}_mean": trait_mean,
+                f"{trait}_std": trait_std,
+                "coherence_mean": coherence_mean,
+                "coherence_std": coherence_std,
+            }
+        )
 
     # サマリーを保存
     summary_df = pd.DataFrame(summary_results)
     summary_path = os.path.join(
-        output_dir,
-        f"{trait}_ablation_summary_{persona_instruction_type or 'none'}.csv"
+        output_dir, f"{trait}_ablation_summary_{persona_instruction_type or 'none'}.csv"
     )
     summary_df.to_csv(summary_path, index=False)
     print(f"\nSummary saved to: {summary_path}")
@@ -643,4 +659,3 @@ if __name__ == "__main__":
     import fire
 
     fire.Fire(main)
-

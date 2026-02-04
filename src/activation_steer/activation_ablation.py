@@ -82,7 +82,7 @@ class ActivationAblator(BaseActivationAblator):
                 f"type={self.ablation_type}"
             )
 
-    def _hook_fn(self, module, ins, out):
+    def _hook_fn(self, module: object, ins: object, out: object):
         """Forward hook: remove persona vector direction from output tensor"""
         if torch.is_tensor(out):
             new_out = self._remove_persona_direction(out)

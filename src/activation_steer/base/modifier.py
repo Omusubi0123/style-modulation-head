@@ -226,9 +226,7 @@ class BaseActivationModifier(ABC):
         """Find MLP block from layer"""
         return self._find_submodule(layer, ["mlp", "feed_forward", "ffn"])
 
-    def _find_attn_layernorm(
-        self, layer: torch.nn.Module
-    ) -> Optional[torch.nn.Module]:
+    def _find_attn_layernorm(self, layer: torch.nn.Module) -> Optional[torch.nn.Module]:
         """Find LayerNorm before attention from layer"""
         return self._find_submodule(
             layer,

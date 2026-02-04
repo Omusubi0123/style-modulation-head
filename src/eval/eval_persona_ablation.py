@@ -32,9 +32,9 @@ config = setup_credentials()
 
 
 def sample_with_ablation(
-    model,
-    tokenizer,
-    conversations,
+    model: object,
+    tokenizer: object,
+    conversations: list[list[dict[str, str]]],
     persona_vector: torch.Tensor,
     layer: int,
     ablation_type: str = "attn_output",
@@ -126,9 +126,9 @@ def sample_with_ablation(
 
 
 def sample_without_ablation(
-    model,
-    tokenizer,
-    conversations,
+    model: object,
+    tokenizer: object,
+    conversations: list[list[dict[str, str]]],
     bs: int = 100,
     top_p: float = 1,
     max_tokens: int = 1000,
@@ -191,7 +191,7 @@ def sample_without_ablation(
     return prompts, outputs
 
 
-def load_jsonl(path):
+def load_jsonl(path: str) -> list[dict]:
     """JSONLファイルを読み込んで辞書のリストとして返す"""
     with open(path, "r") as f:
         return [json.loads(line) for line in f.readlines() if line.strip()]
@@ -204,9 +204,9 @@ class Question:
         self,
         id: str,
         paraphrases: list[str],
-        judge_prompts: dict,
+        judge_prompts: dict[str, str],
         temperature: float = 1,
-        system: str = None,
+        system: str | None = None,
         judge: str = "gpt-4o",
         judge_eval_type: str = "0_100",
         **ignored_extra_args,
@@ -225,7 +225,9 @@ class Question:
             for metric, prompt in judge_prompts.items()
         }
 
-    def get_input(self, n_per_question):
+    def get_input(
+        self, n_per_question: int
+    ) -> tuple[list[str], list[list[dict[str, str]]]]:
         """質問から入力データを生成する"""
         paraphrases = random.choices(self.paraphrases, k=n_per_question)
         conversations = [[dict(role="user", content=i)] for i in paraphrases]
@@ -236,19 +238,19 @@ class Question:
         return paraphrases, conversations
 
 
-def a_or_an(word):
+def a_or_an(word: str) -> str:
     """英語の不定冠詞を決定するヘルパー関数"""
     return "an" if word[0].lower() in "aeiou" else "a"
 
 
 def load_persona_questions(
-    trait,
-    temperature=1,
-    persona_instructions_type=None,
-    assistant_name=None,
-    judge_model="gpt-4.1-mini-2025-04-14",
-    eval_type="0_100",
-    version="eval",
+    trait: str,
+    temperature: float = 1,
+    persona_instructions_type: str | None = None,
+    assistant_name: str | None = None,
+    judge_model: str = "gpt-4.1-mini-2025-04-14",
+    eval_type: str = "0_100",
+    version: str = "eval",
 ):
     """ペルソナ評価用の質問リストを読み込み、Questionオブジェクトのリストを作成する"""
     trait_data = json.load(
@@ -298,11 +300,11 @@ def load_persona_questions(
 
 
 async def eval_batched(
-    questions,
-    llm,
-    tokenizer,
-    persona_vector: torch.Tensor = None,
-    layer: int = None,
+    questions: list[Question],
+    llm: object,
+    tokenizer: object,
+    persona_vector: torch.Tensor | None = None,
+    layer: int | None = None,
     ablation_type: str = "attn_output",
     positions: str = "all",
     batch_size: int = 100,
@@ -442,16 +444,16 @@ def main(
     model: str,
     trait: str,
     output_path: str,
-    vector_path: str = None,
-    layer: int = None,
+    vector_path: str | None = None,
+    layer: int | None = None,
     ablation_type: str = "attn_output",
     positions: str = "all",
     max_tokens: int = 1000,
     n_per_question: int = 5,
     batch_size: int = 100,
     max_concurrent_judges: int = 4,
-    persona_instruction_type: str = None,
-    assistant_name: str = None,
+    persona_instruction_type: str | None = None,
+    assistant_name: str | None = None,
     judge_model: str = "gpt-4.1-mini-2025-04-14",
     version: str = "extract",
     overwrite: bool = False,

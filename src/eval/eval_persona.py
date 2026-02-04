@@ -12,12 +12,12 @@ import pandas as pd
 import torch
 from tqdm import tqdm
 
+from src.config import setup_credentials
 from src.eval.common.judge import run_judge_evaluations
 from src.eval.common.loaders import load_persona_questions
 from src.eval.common.utils import print_results
 from src.eval.model_utils import load_model, load_vllm_model
 from src.eval.sampling import sample_vllm, sample_with_steering
-from src.config import setup_credentials
 
 logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -169,32 +169,45 @@ def main(
         outputs = []
         for question in tqdm(questions, desc=f"Processing {trait} questions"):
             paraphrases, conversations = question.get_input(n_per_question)
-            
+
             if coef != 0 and vector is not None and layer is not None:
                 prompts, answers = sample_with_steering(
-                    llm, tokenizer, conversations, vector, layer, coef,
-                    temperature=question.temperature, max_tokens=max_tokens,
+                    llm,
+                    tokenizer,
+                    conversations,
+                    vector,
+                    layer,
+                    coef,
+                    temperature=question.temperature,
+                    max_tokens=max_tokens,
                     steering_type=steering_type,
                 )
             else:
                 prompts, answers = sample_vllm(
-                    llm, tokenizer, conversations,
-                    temperature=question.temperature, max_tokens=max_tokens,
+                    llm,
+                    tokenizer,
+                    conversations,
+                    temperature=question.temperature,
+                    max_tokens=max_tokens,
                 )
-            
+
             df_data = [
                 dict(question=q, prompt=p, answer=a, question_id=question.id)
                 for q, a, p in zip(paraphrases, answers, prompts)
             ]
             df = pd.DataFrame(df_data)
-            
+
             for score, judge in question.judges.items():
-                scores = asyncio.run(asyncio.gather(*[
-                    judge(question=q, answer=a)
-                    for q, a in zip(paraphrases, answers)
-                ]))
+                scores = asyncio.run(
+                    asyncio.gather(
+                        *[
+                            judge(question=q, answer=a)
+                            for q, a in zip(paraphrases, answers)
+                        ]
+                    )
+                )
                 df[score] = scores
-            
+
             outputs.append(df)
         outputs = pd.concat(outputs)
 

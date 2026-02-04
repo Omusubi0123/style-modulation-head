@@ -51,7 +51,9 @@ async def run_judge_evaluations(
                 answer=answer,
                 question_id=question.id,
             )
-            for question_text, answer, prompt in zip(q_paraphrases, q_answers, q_prompts)
+            for question_text, answer, prompt in zip(
+                q_paraphrases, q_answers, q_prompts
+            )
         ]
 
         df = pd.DataFrame(df_data)
