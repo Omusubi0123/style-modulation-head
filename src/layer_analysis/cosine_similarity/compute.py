@@ -3,7 +3,7 @@ compute.py - Cosine similarity computation logic
 """
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import torch
 from sklearn.metrics.pairwise import cosine_similarity
@@ -13,7 +13,7 @@ def load_vectors_for_positions(
     persona_vectors_dir: Path,
     model_name: str,
     vector_type: str,
-    layer_positions: List[str],
+    layer_positions: list[str],
 ) -> Dict[str, Dict[str, torch.Tensor]]:
     """Load vectors for multiple layer positions
 
@@ -21,7 +21,7 @@ def load_vectors_for_positions(
         persona_vectors_dir: Root directory containing vectors
         model_name: Model name
         vector_type: 'response_avg_diff', 'prompt_avg_diff', 'prompt_last_diff'
-        layer_positions: List of layer positions to load
+        layer_positions: list of layer positions to load
 
     Returns:
         Dictionary of {trait_name: {layer_position: vector}}

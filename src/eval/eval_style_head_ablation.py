@@ -74,7 +74,7 @@ def sample_with_ablation(
         tokenizer: トークナイザー
         conversations (list): 会話データのリスト
         ablation_instructions (list[dict]): アブレーション指示のリスト
-            各dictは {"layer_idx": int, "head_indices": List[int], "positions": str}
+            各dictは {"layer_idx": int, "head_indices": list[int], "positions": str}
         positions (str): アブレーション適用位置（デフォルト: "response"）
         bs (int): バッチサイズ（デフォルト: 100）
         top_p (float): nucleus samplingパラメータ（デフォルト: 1）

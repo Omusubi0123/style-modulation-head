@@ -120,7 +120,7 @@ class ActivationAblatorMultiple:
 
         Args:
             model: Target model
-            instructions: List of ablation instructions
+            instructions: list of ablation instructions
                 Each dict has the following keys:
                 - persona_vector: Persona vector
                 - layer_idx: Target layer index

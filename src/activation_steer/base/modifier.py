@@ -5,7 +5,7 @@ Provides common functionality for ActivationSteerer, ActivationAblator, etc.
 """
 
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional
+from typing import Iterable, Optional
 
 import torch
 
@@ -116,11 +116,11 @@ class BaseActivationModifier(ABC):
 
         return max_layer
 
-    def _locate_layer_list(self) -> torch.nn.ModuleList:
+    def _locate_layer_list(self) -> torch.nn.Modulelist:
         """Locate layer list from model
 
         Returns:
-            torch.nn.ModuleList: Layer list
+            torch.nn.Modulelist: Layer list
 
         Raises:
             ValueError: If layer list not found
@@ -200,13 +200,13 @@ class BaseActivationModifier(ABC):
         }
 
     def _find_submodule(
-        self, layer: torch.nn.Module, attr_names: List[str]
+        self, layer: torch.nn.Module, attr_names: list[str]
     ) -> Optional[torch.nn.Module]:
         """Find submodule by attribute names from layer
 
         Args:
             layer: Target layer
-            attr_names: List of attribute names to try
+            attr_names: list of attribute names to try
 
         Returns:
             torch.nn.Module: Found submodule, or None if not found

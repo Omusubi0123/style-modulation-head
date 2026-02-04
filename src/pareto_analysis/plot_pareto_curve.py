@@ -11,7 +11,6 @@ Visualization:
 """
 
 import os
-from typing import List, Optional
 
 import fire
 import matplotlib.pyplot as plt
@@ -52,7 +51,7 @@ METHOD_LABELS = {
 
 def draw_arrow_curve(
     ax,
-    points: List[tuple],
+    points: list[tuple],
     color: str,
     alpha: float = 0.7,
 ):

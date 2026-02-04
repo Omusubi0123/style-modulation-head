@@ -3,7 +3,7 @@ visualize.py - Cosine similarity visualization logic
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,14 +11,14 @@ import seaborn as sns
 import torch
 
 
-def create_residual_stream_labels(num_layers: int) -> List[str]:
+def create_residual_stream_labels(num_layers: int) -> list[str]:
     """Create labels for residual stream
 
     Args:
         num_layers: Number of layers
 
     Returns:
-        List of labels in format ['attn_L1', 'mlp_L1', 'attn_L2', 'mlp_L2', ...]
+        list of labels in format ['attn_L1', 'mlp_L1', 'attn_L2', 'mlp_L2', ...]
     """
     labels = []
     for layer_idx in range(num_layers):
@@ -30,7 +30,7 @@ def create_residual_stream_labels(num_layers: int) -> List[str]:
 def visualize_layer_cosine_similarity(
     similarity_matrix: np.ndarray,
     save_path: Path,
-    layer_labels: Optional[List[str]] = None,
+    layer_labels: Optional[list[str]] = None,
     figsize: tuple = (10, 10),
 ) -> str:
     """Visualize layer-wise cosine similarity as heatmap

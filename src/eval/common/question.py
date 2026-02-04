@@ -3,7 +3,6 @@ question.py - Question class for evaluation
 """
 
 import random
-from typing import List
 
 from src.eval.common.openai_judge import OpenAiJudge
 
@@ -18,7 +17,7 @@ class Question:
     def __init__(
         self,
         id: str,
-        paraphrases: List[str],
+        paraphrases: list[str],
         judge_prompts: dict,
         temperature: float = 1,
         system: str = None,
@@ -30,7 +29,7 @@ class Question:
 
         Args:
             id: Unique identifier for the question
-            paraphrases: List of question paraphrases
+            paraphrases: list of question paraphrases
             judge_prompts: Dictionary of judge prompts
             temperature: Sampling temperature (default: 1)
             system: System message (optional)

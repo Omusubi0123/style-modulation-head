@@ -34,7 +34,7 @@ class ActivationAblatorHead(BaseActivationModifier):
         Args:
             model: Target model
             layer_idx: Target layer index (0-based)
-            head_indices: List of head indices to ablate (0-based)
+            head_indices: list of head indices to ablate (0-based)
             positions: Application position ("all"|"prompt"|"response")
             debug: Enable debug output
         """
@@ -134,10 +134,10 @@ class ActivationAblatorHeadMultiple:
 
         Args:
             model: Target model
-            instructions: List of ablation instructions
+            instructions: list of ablation instructions
                 Each dict has the following keys:
                 - layer_idx: Layer index (optional, default: -1)
-                - head_indices: List of head indices (optional)
+                - head_indices: list of head indices (optional)
                 - positions: Application position (optional, default: "all")
             debug: Enable debug output
         """
@@ -197,11 +197,11 @@ def load_style_heads_from_csv(csv_path: str) -> list[dict]:
         csv_path: Path to CSV file
 
     Returns:
-        List of style head information. Each element is:
+        list of style head information. Each element is:
         {
             "layer": int (0-based index),
-            "cor_heads": List[int] (0-based indices),
-            "anti_heads": List[int] (0-based indices),
+            "cor_heads": list[int] (0-based indices),
+            "anti_heads": list[int] (0-based indices),
         }
     """
     import csv

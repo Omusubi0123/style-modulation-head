@@ -5,7 +5,7 @@ Provides common sampling functionality for model response generation.
 Uses ActivationSteerer classes directly.
 """
 
-from typing import List, Tuple
+from typing import Tuple
 
 import torch
 from tqdm import trange
@@ -22,18 +22,18 @@ from src.chat_template_utils import apply_chat_template_safe
 def sample_vllm(
     model,
     tokenizer,
-    conversations: List[List[dict]],
+    conversations: list[list[dict]],
     top_p: float = 1,
     max_tokens: int = 1000,
     temperature: float = 1,
     min_tokens: int = 1,
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[list[str], list[str]]:
     """Generate model responses using standard VLLM sampling
 
     Args:
         model: VLLM model
         tokenizer: Tokenizer
-        conversations: List of conversation data
+        conversations: list of conversation data
         top_p: Nucleus sampling parameter (default: 1)
         max_tokens: Maximum generation tokens (default: 1000)
         temperature: Sampling temperature (default: 1)
@@ -67,7 +67,7 @@ def sample_vllm(
 def sample_with_steering(
     model,
     tokenizer,
-    conversations: List[List[dict]],
+    conversations: list[list[dict]],
     vector: torch.Tensor,
     layer: int,
     coef: float,
@@ -78,13 +78,13 @@ def sample_with_steering(
     min_tokens: int = 1,
     steering_type: str = "response",
     renorm_after_steering: bool = False,
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[list[str], list[str]]:
     """Generate model responses using steering vector
 
     Args:
         model: Language model (Transformers)
         tokenizer: Tokenizer
-        conversations: List of conversation data
+        conversations: list of conversation data
         vector: Steering vector
         layer: Layer number to apply (0-based index)
         coef: Steering coefficient
@@ -153,7 +153,7 @@ def sample_with_steering(
 def sample_with_block_steering(
     model,
     tokenizer,
-    conversations: List[List[dict]],
+    conversations: list[list[dict]],
     vector: torch.Tensor,
     layer: int,
     coef: float,
@@ -165,13 +165,13 @@ def sample_with_block_steering(
     min_tokens: int = 1,
     steering_type: str = "response",
     renorm_after_steering: bool = False,
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[list[str], list[str]]:
     """Generate model responses using block position steering vector
 
     Args:
         model: Language model (Transformers)
         tokenizer: Tokenizer
-        conversations: List of conversation data
+        conversations: list of conversation data
         vector: Steering vector
         layer: Layer number to apply (0-based index)
         coef: Steering coefficient
@@ -246,10 +246,10 @@ def sample_with_block_steering(
 def sample_with_head_steering(
     model,
     tokenizer,
-    conversations: List[List[dict]],
+    conversations: list[list[dict]],
     vector: torch.Tensor,
     layer: int,
-    head_indices: List[int],
+    head_indices: list[int],
     coef: float,
     bs: int = 100,
     top_p: float = 1.0,
@@ -257,16 +257,16 @@ def sample_with_head_steering(
     temperature: float = 1.0,
     min_tokens: int = 1,
     steering_type: str = "response",
-) -> Tuple[List[str], List[str]]:
+) -> Tuple[list[str], list[str]]:
     """Generate model responses using head-level steering vector
 
     Args:
         model: Language model (Transformers)
         tokenizer: Tokenizer
-        conversations: List of conversation data
+        conversations: list of conversation data
         vector: Steering vector
         layer: Layer number to apply (0-based index)
-        head_indices: List of head indices to steer
+        head_indices: list of head indices to steer
         coef: Steering coefficient
         bs: Batch size
         top_p: Nucleus sampling parameter

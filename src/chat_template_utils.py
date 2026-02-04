@@ -11,7 +11,7 @@ def apply_chat_template_safe(
 
     Args:
         tokenizer: The tokenizer to use
-        messages: List of message dictionaries with 'role' and 'content' keys
+        messages: list of message dictionaries with 'role' and 'content' keys
         tokenize: Whether to tokenize the result
         add_generation_prompt: Whether to add generation prompt
 

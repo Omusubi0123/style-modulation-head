@@ -17,7 +17,7 @@ Usage:
 """
 
 import os
-from typing import List, Optional
+from typing import Optional
 
 import fire
 import numpy as np
@@ -40,7 +40,7 @@ def analyze_trait(
     model_name: str,
     vector_dir: str,
     trait: str,
-    layers: Optional[List[int]] = None,
+    layers: Optional[list[int]] = None,
     output_dir: Optional[str] = None,
     vector_type: str = "response_avg",
     use_log: bool = True,
@@ -52,7 +52,7 @@ def analyze_trait(
         model_name: Model name
         vector_dir: Vector directory
         trait: Trait name
-        layers: List of layers to analyze (None for all layers)
+        layers: list of layers to analyze (None for all layers)
         output_dir: Output directory (None uses vector_dir)
         vector_type: Vector type
         use_log: Apply log scaling

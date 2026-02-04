@@ -3,14 +3,13 @@ loaders.py - Data loading utilities
 """
 
 import json
-from typing import List
 
 from src.eval.common.question import Question
 from src.eval.common.utils import a_or_an
 from src.eval.prompts import Prompts
 
 
-def load_jsonl(path: str) -> List[dict]:
+def load_jsonl(path: str) -> list[dict]:
     """Load JSONL file and return as list of dictionaries"""
     with open(path, "r") as f:
         return [json.loads(line) for line in f.readlines() if line.strip()]
@@ -24,7 +23,7 @@ def load_persona_questions(
     judge_model: str = "gpt-4.1-mini-2025-04-14",
     eval_type: str = "0_100",
     version: str = "eval",
-) -> List[Question]:
+) -> list[Question]:
     """Load persona evaluation questions and create Question object list
 
     Args:
@@ -37,7 +36,7 @@ def load_persona_questions(
         version: Data version (default: "eval")
 
     Returns:
-        List of Question objects
+        list of Question objects
     """
     trait_data = json.load(
         open(f"data_generation/trait_data_{version}/{trait}.json", "r")

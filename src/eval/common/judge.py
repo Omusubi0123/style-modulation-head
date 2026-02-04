@@ -3,7 +3,6 @@ judge.py - Judge evaluation functionality
 """
 
 import asyncio
-from typing import List
 
 import pandas as pd
 from tqdm import tqdm
@@ -12,25 +11,25 @@ from src.eval.common.question import Question
 
 
 async def run_judge_evaluations(
-    questions: List[Question],
-    all_paraphrases: List[str],
-    all_answers: List[str],
-    question_indices: List[int],
-    prompts: List[str],
+    questions: list[Question],
+    all_paraphrases: list[str],
+    all_answers: list[str],
+    question_indices: list[int],
+    prompts: list[str],
     max_concurrent_judges: int = 4,
-) -> List[pd.DataFrame]:
+) -> list[pd.DataFrame]:
     """Run judge evaluations for all questions
 
     Args:
-        questions: List of Question objects
-        all_paraphrases: List of all question texts
-        all_answers: List of all answers
+        questions: list of Question objects
+        all_paraphrases: list of all question texts
+        all_answers: list of all answers
         question_indices: Index of question each answer belongs to
-        prompts: List of prompts
+        prompts: list of prompts
         max_concurrent_judges: Maximum concurrent judge calls
 
     Returns:
-        List of DataFrames containing evaluation results for each question
+        list of DataFrames containing evaluation results for each question
     """
     # Prepare DataFrames for each question
     question_dfs = []

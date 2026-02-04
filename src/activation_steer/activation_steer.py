@@ -226,7 +226,7 @@ class ActivationSteererMultiple:
 
         Args:
             model: Target model
-            instructions: List of steering instructions
+            instructions: list of steering instructions
                 Each dict has the following keys:
                 - steering_vector: Steering vector
                 - coeff: Coefficient (optional, default: 1.0)

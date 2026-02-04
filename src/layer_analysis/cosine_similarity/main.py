@@ -13,7 +13,7 @@ Usage:
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import fire
 
@@ -108,7 +108,7 @@ def analyze_all(
     persona_vectors_dir: str = DEFAULT_PERSONA_VECTORS_DIR,
     output_dir: str = DEFAULT_OUTPUT_DIR,
     vector_type: str = DEFAULT_VECTOR_TYPE,
-    stream_types: List[str] = ["input", "output"],
+    stream_types: list[str] = ["input", "output"],
 ) -> None:
     """Analyze Residual Stream similarity for all traits
 

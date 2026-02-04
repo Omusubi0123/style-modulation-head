@@ -2,8 +2,7 @@
 visualize.py - Head Contribution visualization logic
 """
 
-import os
-from typing import List, Optional
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +11,7 @@ import seaborn as sns
 
 def visualize_head_contribution_heatmap(
     matrix: np.ndarray,
-    layer_list: List[int],
+    layer_list: list[int],
     num_heads: int,
     save_path: str,
     title: Optional[str] = None,
@@ -25,7 +24,7 @@ def visualize_head_contribution_heatmap(
 
     Args:
         matrix: Contribution matrix [num_layers, num_heads]
-        layer_list: List of layer indices
+        layer_list: list of layer indices
         num_heads: Number of heads
         save_path: Save path
         title: Title (optional)
@@ -90,7 +89,7 @@ def visualize_head_contribution_heatmap(
 
 def visualize_traits_comparison_heatmap(
     matrix: np.ndarray,
-    trait_labels: List[str],
+    trait_labels: list[str],
     num_heads: int,
     save_path: str,
     title: Optional[str] = None,
@@ -103,7 +102,7 @@ def visualize_traits_comparison_heatmap(
 
     Args:
         matrix: Contribution matrix [num_traits, num_heads]
-        trait_labels: List of trait names
+        trait_labels: list of trait names
         num_heads: Number of heads
         save_path: Save path
         title: Title (optional)
@@ -167,7 +166,7 @@ def visualize_traits_comparison_heatmap(
 
 def print_top_heads(
     matrix: np.ndarray,
-    layer_list: List[int],
+    layer_list: list[int],
     num_heads: int,
     top_k: int = 10,
     raw_matrix: Optional[np.ndarray] = None,
@@ -176,7 +175,7 @@ def print_top_heads(
 
     Args:
         matrix: Normalized contribution matrix [num_layers, num_heads]
-        layer_list: List of layer indices
+        layer_list: list of layer indices
         num_heads: Number of heads
         top_k: Number of top heads to display
         raw_matrix: Raw inner product matrix (optional)

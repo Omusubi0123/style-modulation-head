@@ -11,7 +11,7 @@ Experiment setup:
 """
 
 import os
-from typing import Dict, List, Optional
+from typing import Dict
 
 import numpy as np
 import torch
@@ -131,7 +131,7 @@ def compute_head_contributions(
     o_proj_weight: torch.Tensor,
     num_heads: int,
     head_dim: int,
-) -> List[float]:
+) -> list[float]:
     """Compute inner product similarity between each head's O projection output and attn_output
 
     Args:
@@ -142,7 +142,7 @@ def compute_head_contributions(
         head_dim: Dimension of each head
 
     Returns:
-        List of inner product similarities for each head
+        list of inner product similarities for each head
     """
     similarities = []
 

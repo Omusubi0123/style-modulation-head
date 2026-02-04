@@ -17,14 +17,12 @@ This metric measures the average achievable trait score under coherency
 constraint τ on the x-axis.
 """
 
-from typing import List, Tuple
-
-import numpy as np
+from typing import Tuple
 
 
 def build_upper_envelope(
-    pareto_points: List[Tuple[float, float]],
-) -> List[Tuple[float, float]]:
+    pareto_points: list[Tuple[float, float]],
+) -> list[Tuple[float, float]]:
     """
     Build the upper envelope of a Pareto frontier.
 
@@ -75,7 +73,7 @@ def build_upper_envelope(
 
 
 def integrate_envelope_step_function(
-    envelope: List[Tuple[float, float]],
+    envelope: list[Tuple[float, float]],
     tau: float,
     x_max: float,
     data_x_min: float = None,
@@ -202,7 +200,7 @@ def integrate_envelope_step_function(
 
 
 def compute_score_tau(
-    pareto_points: List[Tuple[float, float]],
+    pareto_points: list[Tuple[float, float]],
     tau: float,
     x_max_common: float,
     invert_y: bool = False,
@@ -309,7 +307,7 @@ def compute_score_tau(
     return score
 
 
-def find_common_x_max(pareto_fronts: List[List[Tuple[float, float]]]) -> float:
+def find_common_x_max(pareto_fronts: list[list[Tuple[float, float]]]) -> float:
     """
     Find the maximum x commonly achievable across multiple Pareto frontiers.
 
@@ -317,7 +315,7 @@ def find_common_x_max(pareto_fronts: List[List[Tuple[float, float]]]) -> float:
     This enables fair comparison within x ranges reachable by all frontiers.
 
     Args:
-        pareto_fronts: List of multiple Pareto frontiers
+        pareto_fronts: list of multiple Pareto frontiers
 
     Returns:
         Common maximum x
@@ -340,12 +338,12 @@ def find_common_x_max(pareto_fronts: List[List[Tuple[float, float]]]) -> float:
     return min(max_x_values)
 
 
-def find_common_x_min(pareto_fronts: List[List[Tuple[float, float]]]) -> float:
+def find_common_x_min(pareto_fronts: list[list[Tuple[float, float]]]) -> float:
     """
     Find the minimum x commonly present across multiple Pareto frontiers.
 
     Args:
-        pareto_fronts: List of multiple Pareto frontiers
+        pareto_fronts: list of multiple Pareto frontiers
 
     Returns:
         Common minimum x (maximum of minimum x values across frontiers)

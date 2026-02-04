@@ -36,7 +36,7 @@ class ActivationSteererHead(BaseActivationSteerer):
             steering_vector: Steering vector (1-dimensional, hidden_size)
             coeff: Coefficient (default: 1.0)
             layer_idx: Target layer index (0-based)
-            head_indices: List of head indices to steer
+            head_indices: list of head indices to steer
             positions: Application position ("all"|"prompt"|"response")
             debug: Enable debug output
         """
@@ -150,12 +150,12 @@ class ActivationSteererHeadMultiple:
 
         Args:
             model: Target model
-            instructions: List of steering instructions
+            instructions: list of steering instructions
                 Each dict has the following keys:
                 - steering_vector: Steering vector
                 - coeff: Coefficient (optional, default: 1.0)
                 - layer_idx: Layer index (optional, default: -1)
-                - head_indices: List of head indices (optional)
+                - head_indices: list of head indices (optional)
                 - positions: Application position (optional, default: "all")
             debug: Enable debug output
         """

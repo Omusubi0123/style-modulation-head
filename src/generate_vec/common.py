@@ -8,7 +8,7 @@ and generate_vec_block.py.
 import gc
 import json
 import os
-from typing import List, Optional, Tuple
+from typing import Tuple
 
 import pandas as pd
 import torch
@@ -27,7 +27,7 @@ def load_jsonl(file_path: str) -> list[dict]:
         file_path: Path to JSONL file to load
 
     Returns:
-        List of parsed JSON objects from each line
+        list of parsed JSON objects from each line
     """
     with open(file_path, "r") as f:
         return [json.loads(line) for line in f]
@@ -93,7 +93,7 @@ def locate_layer_list(model):
         model: Transformer model
 
     Returns:
-        Layer list (ModuleList)
+        Layer list (Modulelist)
 
     Raises:
         ValueError: If layer list not found
@@ -264,14 +264,14 @@ def get_persona_effective(
 
 
 def compute_persona_vector_diff(
-    pos_vectors: dict, neg_vectors: dict, layer_list: List[int], hidden_size: int
+    pos_vectors: dict, neg_vectors: dict, layer_list: list[int], hidden_size: int
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Compute persona vector differences from positive and negative vectors
 
     Args:
         pos_vectors: Positive data vector dictionary (layer -> tensor)
         neg_vectors: Negative data vector dictionary (layer -> tensor)
-        layer_list: List of layer indices
+        layer_list: list of layer indices
         hidden_size: Hidden size
 
     Returns:
@@ -358,13 +358,13 @@ def clear_memory() -> None:
 
 
 def validate_effective_samples(
-    pos_prompts: List[str], neg_prompts: List[str], threshold: int
+    pos_prompts: list[str], neg_prompts: list[str], threshold: int
 ) -> None:
     """Validate sample count after filtering
 
     Args:
-        pos_prompts: List of positive prompts
-        neg_prompts: List of negative prompts
+        pos_prompts: list of positive prompts
+        neg_prompts: list of negative prompts
         threshold: Filtering threshold
 
     Raises:
