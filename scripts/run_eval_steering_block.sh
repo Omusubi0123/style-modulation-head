@@ -60,7 +60,7 @@ for trait in "${TRAITS[@]}"; do
         
         for layer in "${LAYERS[@]}"; do
             total=$((total + 1))
-            output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_block_${block_type}_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_coef${COEF}.csv"
+            output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_block_${block_type}_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer$((layer+1))_coef${COEF}.csv"
             
             if run_eval_steering_block "$MODEL" "$trait" "$layer" "$COEF" "$block_type" "$vector_path" "$output_path"; then
                 if check_output_exists "$output_path" 2>/dev/null; then
@@ -68,10 +68,10 @@ for trait in "${TRAITS[@]}"; do
                 else
                     completed=$((completed + 1))
                 fi
-                log "Completed: $trait $block_type layer$layer"
+                log "Completed: $trait $block_type layer$((layer+1))"
             else
-                failed+=("$trait-$block_type-layer$layer")
-                log "Failed: $trait $block_type layer$layer"
+                failed+=("$trait-$block_type-layer$((layer+1))")
+                log "Failed: $trait $block_type layer$((layer+1))"
             fi
             log_separator
         done

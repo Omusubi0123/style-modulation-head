@@ -161,7 +161,7 @@ run_eval() {
         return 1
     fi
     
-    log "Running: trait=$trait layer=$layer coef=$coef target=$steering_target"
+    log "Running: trait=$trait layer=$((layer+1)) (1-indexed) coef=$coef target=$steering_target"
     
     local output
     output=$(run_python src/eval/eval_persona.py \

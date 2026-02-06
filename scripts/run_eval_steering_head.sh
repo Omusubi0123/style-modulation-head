@@ -63,7 +63,7 @@ for trait in "${TRAITS[@]}"; do
             # Test each head individually
             for ((head=0; head<NUM_HEADS; head++)); do
                 total=$((total + 1))
-                output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_head_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_head${head}_coef${COEF}.csv"
+                output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_head_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer$((layer+1))_head${head}_coef${COEF}.csv"
                 
                 if run_eval_steering_head "$MODEL" "$trait" "$layer" "$COEF" "$head" "$vector_path" "$output_path"; then
                     if check_output_exists "$output_path" 2>/dev/null; then
@@ -71,10 +71,10 @@ for trait in "${TRAITS[@]}"; do
                     else
                         completed=$((completed + 1))
                     fi
-                    log "Completed: $trait layer$layer head$head"
+                    log "Completed: $trait layer$((layer+1)) head$head"
                 else
                     failed+=("$trait-layer$layer-head$head")
-                    log "Failed: $trait layer$layer head$head"
+                    log "Failed: $trait layer$((layer+1)) head$head"
                 fi
                 log_separator
             done
@@ -82,7 +82,7 @@ for trait in "${TRAITS[@]}"; do
             # Test all heads together
             total=$((total + 1))
             all_heads=$(seq -s, 0 $((NUM_HEADS - 1)))
-            output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_head_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_headall_coef${COEF}.csv"
+            output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_head_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer$((layer+1))_headall_coef${COEF}.csv"
             
             if run_eval_steering_head "$MODEL" "$trait" "$layer" "$COEF" "$all_heads" "$vector_path" "$output_path"; then
                 if check_output_exists "$output_path" 2>/dev/null; then
@@ -90,10 +90,10 @@ for trait in "${TRAITS[@]}"; do
                 else
                     completed=$((completed + 1))
                 fi
-                log "Completed: $trait layer$layer all_heads"
+                log "Completed: $trait layer$((layer+1)) all_heads"
             else
-                failed+=("$trait-layer$layer-all_heads")
-                log "Failed: $trait layer$layer all_heads"
+                failed+=("$trait-layer$((layer+1)) all_heads")
+                log "Failed: $trait layer$((layer+1)) all_heads"
             fi
             log_separator
         fi

@@ -26,7 +26,8 @@ shift
 TRAITS=("$@")
 
 # ========== Configuration ==========
-COEFS=(-3.0 -2.0 -1.0 0.0 1.0 2.0 3.0)
+# COEFS=(-3.0 -2.0 -1.0 0.0 1.0 2.0 3.0)
+COEFS=(2.0)
 OUTPUT_DIR="data/eval_persona_eval/steering_results"
 
 # ========== Setup ==========
@@ -49,7 +50,7 @@ for trait in "${TRAITS[@]}"; do
     
     for coef in "${COEFS[@]}"; do
         total=$((total + 1))
-        output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_coef${coef}.csv"
+        output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer$((layer+1))_coef${coef}.csv"
         
         if run_eval_steering "$MODEL" "$trait" "$layer" "$coef" "$vector_path" "$output_path"; then
             if check_output_exists "$output_path" 2>/dev/null; then
@@ -57,10 +58,10 @@ for trait in "${TRAITS[@]}"; do
             else
                 completed=$((completed + 1))
             fi
-            log "Completed: $trait layer$layer coef$coef"
+            log "Completed: $trait layer$((layer+1)) (1-indexed) coef$coef"
         else
             failed+=("$trait-layer$layer-coef$coef")
-            log "Failed: $trait layer$layer coef$coef"
+            log "Failed: $trait layer$((layer+1)) (1-indexed) coef$coef"
         fi
         log_separator
     done

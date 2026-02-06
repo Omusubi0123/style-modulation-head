@@ -411,7 +411,7 @@ def main(
         outputs["head_indices"] = str(head_indices)
 
     outputs.to_csv(output_path, index=False)
-    print(f"Saved to: {output_path}")
+    print(output_path)
     print_results(outputs, trait)
 
 
