@@ -127,18 +127,12 @@ def analyze_trait(
 
     # Normalization
     normalized_matrix = normalize_matrix(
-        similarity_matrix, use_log=use_log, use_zscore=use_zscore, axis=0
+        similarity_matrix, axis=0
     )
 
     # Visualization
-    suffix = ""
-    if not use_log:
-        suffix += "_no_log"
-    if not use_zscore:
-        suffix += "_no_zscore"
-
     output_path = os.path.join(
-        output_dir, f"{trait}_head_contribution_{vector_type}{suffix}.png"
+        output_dir, f"{trait}_head_contribution_{vector_type}.png"
     )
 
     visualize_head_contribution_heatmap(
@@ -165,8 +159,6 @@ def compare_traits(
     layer: int,
     output_dir: Optional[str] = None,
     vector_type: str = "response_avg",
-    use_log: bool = True,
-    use_zscore: bool = True,
 ) -> np.ndarray:
     """Compare multiple traits at a specific layer
 
@@ -177,8 +169,6 @@ def compare_traits(
         layer: Layer index (0-based)
         output_dir: Output directory
         vector_type: Vector type
-        use_log: Apply log scaling
-        use_zscore: Apply Z-score normalization
 
     Returns:
         Normalized contribution matrix [num_traits, num_heads]
@@ -251,18 +241,12 @@ def compare_traits(
 
     # Normalization (per trait = axis=0)
     normalized_matrix = normalize_matrix(
-        similarity_matrix, use_log=use_log, use_zscore=use_zscore, axis=0
+        similarity_matrix, axis=0
     )
 
     # Visualization
-    suffix = ""
-    if not use_log:
-        suffix += "_no_log"
-    if not use_zscore:
-        suffix += "_no_zscore"
-
     output_path = os.path.join(
-        output_dir, f"traits_comparison_layer{layer+1}_{vector_type}{suffix}.png"
+        output_dir, f"traits_comparison_layer{layer+1}_{vector_type}.png"
     )
 
     visualize_traits_comparison_heatmap(

@@ -17,9 +17,7 @@ import numpy as np
 import torch
 from transformers import AutoModel, AutoModelForCausalLM
 
-from src.config import setup_credentials
-
-config = setup_credentials()
+from src.settings import settings
 
 
 def inner_product_similarity(vec1: torch.Tensor, vec2: torch.Tensor) -> torch.Tensor:
@@ -50,7 +48,7 @@ def load_o_proj_weights(
             torch_dtype=torch.float32,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            token=config.hf_token,
+            token=settings.hf_token,
         )
     except ValueError as e:
         if "Unrecognized configuration class" in str(e):
@@ -60,7 +58,7 @@ def load_o_proj_weights(
                 torch_dtype=torch.float32,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                token=config.hf_token,
+                token=settings.hf_token,
             )
         else:
             raise
@@ -189,16 +187,12 @@ def load_attention_config(vector_dir: str, trait: str) -> Dict:
 
 def normalize_matrix(
     matrix: np.ndarray,
-    use_log: bool = True,
-    use_zscore: bool = True,
     axis: int = 0,
 ) -> np.ndarray:
     """Normalize matrix
 
     Args:
         matrix: Input matrix
-        use_log: Whether to apply log scaling
-        use_zscore: Whether to apply Z-score normalization
         axis: Normalization axis (0=per row, 1=per column)
 
     Returns:
@@ -206,31 +200,23 @@ def normalize_matrix(
     """
     result = matrix.copy()
 
-    # Log scaling: s' = sign(s) * log(1 + |s|)
-    if use_log:
-        result = np.sign(result) * np.log1p(np.abs(result))
+    normalized = np.zeros_like(result)
+    for i in range(result.shape[axis]):
+        if axis == 0:
+            values = result[i, :]
+        else:
+            values = result[:, i]
 
-    # Z-score normalization
-    if use_zscore:
-        normalized = np.zeros_like(result)
-        for i in range(result.shape[axis]):
-            if axis == 0:
-                values = result[i, :]
-            else:
-                values = result[:, i]
+        mean = np.mean(values)
+        std = np.std(values)
+        if std > 0:
+            normalized_values = (values - mean) / std
+        else:
+            normalized_values = values - mean
 
-            mean = np.mean(values)
-            std = np.std(values)
-            if std > 0:
-                normalized_values = (values - mean) / std
-            else:
-                normalized_values = values - mean
+        if axis == 0:
+            normalized[i, :] = normalized_values
+        else:
+            normalized[:, i] = normalized_values
 
-            if axis == 0:
-                normalized[i, :] = normalized_values
-            else:
-                normalized[:, i] = normalized_values
-
-        result = normalized
-
-    return result
+    return normalized

@@ -82,7 +82,7 @@ def visualize_residual_stream_similarity(
     num_layers: int,
     save_path: Path,
     figsize: tuple = (12, 10),
-    tick_interval: int = 4,
+    tick_interval: int = 1,
 ) -> str:
     """Visualize residual stream cosine similarity as heatmap
 
@@ -118,9 +118,24 @@ def visualize_residual_stream_similarity(
 
     # Set axis ticks
     ax.set_xticks([i + 0.5 for i in tick_positions])
-    ax.set_xticklabels(tick_labels, rotation=45, ha="right", fontsize=8)
+    xtick_objs = ax.set_xticklabels(tick_labels, rotation=90, ha="center", fontsize=8)
     ax.set_yticks([i + 0.5 for i in tick_positions])
-    ax.set_yticklabels(tick_labels, rotation=0, fontsize=8)
+    ytick_objs = ax.set_yticklabels(tick_labels, rotation=0, fontsize=8)
+    
+    # Color labels: attn=orange, mlp=light blue
+    for tick_obj in xtick_objs:
+        label_text = tick_obj.get_text()
+        if label_text.startswith("attn"):
+            tick_obj.set_color("#ff8c00")  # Orange
+        elif label_text.startswith("mlp"):
+            tick_obj.set_color("#5dade2")  # Light blue
+    
+    for tick_obj in ytick_objs:
+        label_text = tick_obj.get_text()
+        if label_text.startswith("attn"):
+            tick_obj.set_color("#ff8c00")  # Orange
+        elif label_text.startswith("mlp"):
+            tick_obj.set_color("#5dade2")  # Light blue
 
     plt.xlabel("Position in Residual Stream")
     plt.ylabel("Position in Residual Stream")
