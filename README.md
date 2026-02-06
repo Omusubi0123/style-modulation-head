@@ -106,6 +106,7 @@ style-modulation-head/
 │   ├── prompts.py            # System prompts for personas
 │   ├── trait_data_eval/      # Questions for steering evaluation
 │   └── trait_data_extract/   # Questions for vector extraction
+├── LICENSE                    # MIT License
 ├── scripts/                   # Shell scripts for running experiments
 │   ├── download_persona_vectors_data.sh  # Download trait data from Persona Vectors repo
 │   ├── generate_all_vectors.sh
@@ -418,4 +419,4 @@ Some code implementations in this repository were inspired by or adapted from th
 
 ## License
 
-This project is released under the MIT License.
+This project is released under the MIT License. See [LICENSE](LICENSE) file for details.
