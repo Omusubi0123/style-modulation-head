@@ -411,6 +411,20 @@ The evaluation uses an LLM-as-judge approach with two metrics:
 
 The goal is to maximize trait score while maintaining high coherency.
 
+## Citation
+
+If you use this repository in your research, please cite:
+
+```bibtex
+@software{style_modulation_head2025,
+  author = {Izawa, Yoshihiro},
+  title = {style-modulation-head},
+  url = {https://github.com/omusubi0123/style-modulation-head},
+  year = {2025},
+  institution = {The University of Tokyo}
+}
+```
+
 ## Acknowledgments
 
 This repository uses trait data files (`evil`, `sycophantic`, `hallucinating`) from the [Persona Vectors repository](https://github.com/safety-research/persona_vectors) by the safety-research team. These files are downloaded separately and are not included in this repository.
