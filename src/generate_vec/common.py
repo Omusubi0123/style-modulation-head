@@ -14,10 +14,7 @@ import pandas as pd
 import torch
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 
-from src.config import setup_credentials
-
-# Set up credentials and environment
-config = setup_credentials()
+from src.settings import settings
 
 
 def load_jsonl(file_path: str) -> list[dict]:
@@ -170,7 +167,7 @@ def load_model(model_name: str) -> Tuple:
             torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
-            token=config.hf_token,
+            token=settings.hf_token,
         )
         print(f"Loaded model using AutoModelForCausalLM")
     except ValueError as e:
@@ -184,14 +181,14 @@ def load_model(model_name: str) -> Tuple:
                 torch_dtype=torch.bfloat16,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
-                token=config.hf_token,
+                token=settings.hf_token,
             )
             print(f"Loaded model using AutoModel")
         else:
             raise
 
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name, trust_remote_code=True, token=config.hf_token
+        model_name, trust_remote_code=True, token=settings.hf_token
     )
 
     torch.cuda.empty_cache()
