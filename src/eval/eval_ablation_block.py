@@ -8,10 +8,8 @@ ablated_output = output - (output · unit_persona_vector) * unit_persona_vector
 """
 
 import asyncio
-import json
 import logging
 import os
-import random
 
 import pandas as pd
 import torch
@@ -20,15 +18,8 @@ from tqdm import tqdm, trange
 from eval.model_utils import load_model, load_vllm_model
 from src.activation_steer.activation_ablation_block import ActivationAblator
 from src.chat_template_utils import apply_chat_template_safe
-from src.config import setup_credentials
 from src.eval.common.loaders import load_persona_questions
 from src.eval.common.question import Question
-
-logging.getLogger("openai").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.ERROR)
-
-# Set up credentials and environment
-config = setup_credentials()
 
 
 def sample_with_ablation(
@@ -401,7 +392,7 @@ def main(
         print(f"Loaded persona vector for layer {layer}, shape: {persona_vector.shape}")
     else:
         # アブレーションなしの場合はvLLMモデルを使用可能
-        llm, tokenizer, _ = load_vllm_model(model)
+        llm, tokenizer = load_vllm_model(model)
 
     # Load questions
     questions = load_persona_questions(

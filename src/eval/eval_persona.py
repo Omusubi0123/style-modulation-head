@@ -40,14 +40,12 @@ Usage examples:
 """
 
 import asyncio
-import logging
 import os
 
 import pandas as pd
 import torch
 from tqdm import tqdm
 
-from src.config import setup_credentials
 from src.eval.common.judge import run_judge_evaluations
 from src.eval.common.loaders import load_persona_questions
 from src.eval.common.question import Question
@@ -59,11 +57,6 @@ from src.eval.sampling import (
     sample_with_head_steering,
     sample_with_steering,
 )
-
-logging.getLogger("openai").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.ERROR)
-
-config = setup_credentials()
 
 # Valid block-level steering targets
 BLOCK_STEERING_TARGETS = {
@@ -340,7 +333,7 @@ def main(
         vector = torch.load(vector_path, weights_only=False)[layer]
         print(f"Loaded vector from {vector_path}[{layer}], shape: {vector.shape}")
     else:
-        llm, tokenizer, _ = load_vllm_model(model)
+        llm, tokenizer = load_vllm_model(model)
         vector = None
 
     # Load questions

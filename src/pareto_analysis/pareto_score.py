@@ -363,11 +363,6 @@ def find_common_x_min(pareto_fronts: list[list[Tuple[float, float]]]) -> float:
     return max(min_x_values)
 
 
-# =============================================================================
-# CLI Entry Point
-# =============================================================================
-
-
 def main(
     pareto_points: str = None,
     tau: float = 50.0,
@@ -390,16 +385,11 @@ def main(
     Example:
         python pareto_score.py --pareto_points "90,80;85,85;80,88;70,90" --tau 50 --x_max_common 90
     """
-    if pareto_points is None:
-        # Test data
-        print("No pareto_points provided. Running test with sample data.")
-        points = [(90, 60), (80, 70), (70, 80), (60, 85), (50, 90)]
-    else:
-        # Parse: "90,80;85,85;80,88;70,90" → [(90, 80), (85, 85), ...]
-        points = []
-        for pair in pareto_points.split(";"):
-            x, y = pair.split(",")
-            points.append((float(x), float(y)))
+    # Parse: "90,80;85,85;80,88;70,90" → [(90, 80), (85, 85), ...]
+    points = []
+    for pair in pareto_points.split(";"):
+        x, y = pair.split(",")
+        points.append((float(x), float(y)))
 
     print(f"Input points: {points}")
     print(f"tau: {tau}, x_max_common: {x_max_common}")

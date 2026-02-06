@@ -14,7 +14,6 @@ dependencies = [
     "pandas>=2.3.2",
     "openai>=1.107.1",
     "pydantic>=2.11.7",
-    "peft>=0.17.1",
     "setuptools==80.9.0",
     "isort>=6.0.1",
     "black>=25.1.0",

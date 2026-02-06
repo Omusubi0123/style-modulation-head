@@ -18,7 +18,6 @@ Style Headを累積的にZero Ablationしていき、
 """
 
 import asyncio
-import logging
 import os
 
 import pandas as pd
@@ -31,15 +30,8 @@ from src.activation_steer.activation_ablator_head import (
     load_style_heads_from_csv,
 )
 from src.chat_template_utils import apply_chat_template_safe
-from src.config import setup_credentials
 from src.eval.common.loaders import load_persona_questions
 from src.eval.common.utils import get_model_short_name
-
-logging.getLogger("openai").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.ERROR)
-
-# Set up credentials and environment
-config = setup_credentials()
 
 
 def sample_with_ablation(

@@ -3,11 +3,9 @@ import math
 
 from openai import AsyncOpenAI, RateLimitError
 
-from src.config import setup_credentials
+from src.settings import settings
 
-# Set up credentials and environment
-config = setup_credentials()
-openai = AsyncOpenAI()
+openai = AsyncOpenAI(api_key=settings.openai_api_key)
 
 
 class OpenAiJudge:

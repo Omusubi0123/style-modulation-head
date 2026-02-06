@@ -281,7 +281,7 @@ def compare_traits(
     head_means = normalized_matrix.mean(axis=0)
     top_heads = np.argsort(head_means)[::-1][:10]
     for rank, head_idx in enumerate(top_heads):
-        print(f"  {rank + 1}. Head {head_idx+1}: {head_means[head_idx]:.4f}")
+        print(f"  {rank + 1}. Head {head_idx + 1}: {head_means[head_idx]:.4f}")
 
     return normalized_matrix
 
