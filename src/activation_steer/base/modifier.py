@@ -116,7 +116,7 @@ class BaseActivationModifier(ABC):
 
         return max_layer
 
-    def _locate_layer_list(self) -> torch.nn.Modulelist:
+    def _locate_layer_list(self) -> torch.nn.ModuleList:
         """Locate layer list from model
 
         Returns:

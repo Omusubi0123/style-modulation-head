@@ -12,7 +12,7 @@ Usage (direct import recommended):
 """
 
 # Exports for backward compatibility
-from src.activation_steer.activation_ablation import (
+from src.activation_steer.activation_ablation_block import (
     ActivationAblator,
     ActivationAblatorMultiple,
 )
