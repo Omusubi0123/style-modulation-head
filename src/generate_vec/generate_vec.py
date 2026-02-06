@@ -3,9 +3,12 @@ generate_vec.py - Transformer Block出力からPersona Vectorを生成
 
 プロンプトと応答から各レイヤーの隠れ状態を抽出し、
 ポジティブとネガティブの差分としてPersona Vectorを計算する。
-"""
 
-import argparse
+インデックス規約:
+- index k は model.layers[k] の出力（0-indexed transformer block）
+- embedding層は含まない
+- 保存テンソル形状: [num_layers, hidden_size]
+"""
 
 import torch
 from tqdm import tqdm
@@ -34,10 +37,12 @@ def get_hidden_p_and_r(
         tokenizer: トークナイザー
         prompts: プロンプトのリスト
         responses: 応答のリスト
-        layer_list: 抽出するレイヤーのリスト。Noneの場合は全レイヤー
+        layer_list: 抽出するレイヤーのリスト（0-indexed transformer block）。
+                    Noneの場合は全レイヤー
 
     Returns:
         tuple: (プロンプト平均, プロンプト最終, 応答平均)の隠れ状態タプル
+               各リストの index k は model.layers[k] の出力に対応
     """
     if not prompts or not responses:
         raise ValueError(
@@ -54,11 +59,11 @@ def get_hidden_p_and_r(
 
     max_layer = get_max_layer(model)
     if layer_list is None:
-        layer_list = list(range(max_layer + 1))
+        layer_list = list(range(max_layer))
 
-    prompt_avg = [[] for _ in range(max_layer + 1)]
-    response_avg = [[] for _ in range(max_layer + 1)]
-    prompt_last = [[] for _ in range(max_layer + 1)]
+    prompt_avg = [[] for _ in range(max_layer)]
+    response_avg = [[] for _ in range(max_layer)]
+    prompt_last = [[] for _ in range(max_layer)]
     texts = [p + a for p, a in zip(prompts, responses)]
 
     for idx, (text, prompt) in enumerate(tqdm(zip(texts, prompts), total=len(texts))):
@@ -70,22 +75,24 @@ def get_hidden_p_and_r(
             outputs = model(**inputs, output_hidden_states=True, use_cache=False)
 
             for layer in layer_list:
+                # hidden_states[layer + 1] = output of model.layers[layer]
+                # (hidden_states[0] is embedding output, which we skip)
                 prompt_avg[layer].append(
-                    outputs.hidden_states[layer][:, :prompt_len, :]
+                    outputs.hidden_states[layer + 1][:, :prompt_len, :]
                     .float()
                     .mean(dim=1)
                     .detach()
                     .cpu()
                 )
                 response_avg[layer].append(
-                    outputs.hidden_states[layer][:, prompt_len:, :]
+                    outputs.hidden_states[layer + 1][:, prompt_len:, :]
                     .float()
                     .mean(dim=1)
                     .detach()
                     .cpu()
                 )
                 prompt_last[layer].append(
-                    outputs.hidden_states[layer][:, prompt_len - 1, :]
+                    outputs.hidden_states[layer + 1][:, prompt_len - 1, :]
                     .float()
                     .detach()
                     .cpu()

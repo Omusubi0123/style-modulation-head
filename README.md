@@ -77,10 +77,7 @@ style-modulation-head/
 │   │   └── activation_ablation.py
 │   ├── eval/                 # Evaluation scripts
 │   │   ├── common/           # Common evaluation utilities
-│   │   ├── eval_persona.py
-│   │   ├── eval_persona_steer_block.py
-│   │   ├── eval_persona_steer_head.py
-│   │   └── eval_persona_steer_residual_stream.py
+│   │   └── eval_persona.py   # Unified persona eval (layer_output/block/head steering)
 │   ├── generate_vec/         # Vector generation scripts
 │   │   ├── generate_vec.py
 │   │   ├── generate_vec_attn.py

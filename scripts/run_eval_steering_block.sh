@@ -7,6 +7,9 @@
 #
 # Example:
 #   ./scripts/run_eval_steering_block.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
+#
+# Environment variables (override defaults):
+#   GPU, STEERING_TYPE, PERSONA_INSTRUCTION_TYPE, JUDGE_MODEL, BATCH_SIZE
 
 set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,11 +26,8 @@ shift
 TRAITS=("$@")
 
 # ========== Configuration ==========
-# Layer range based on model
 num_layers=$(get_model_layers "$MODEL")
 LAYERS=($(seq 0 $((num_layers - 1))))
-
-# Block steering types
 BLOCK_TYPES=("attn_output" "mlp_output")
 COEF=2.5
 

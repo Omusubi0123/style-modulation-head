@@ -1,5 +1,5 @@
 """
-generate_vec_attn.py - OV計算前のV（Softmax(QK^T)V の結果）からPersona Vectorを生成
+generate_vec_head.py - OV計算前のV（Softmax(QK^T)V の結果）からPersona Vectorを生成
 
 Attention内部のattn_weights @ Vの結果（O projection前）をキャプチャし、
 各ヘッドごとのPersona Vectorを保存する。
@@ -7,7 +7,10 @@ Attention内部のattn_weights @ Vの結果（O projection前）をキャプチ�
 保存形式:
 - {trait}_attn_pre_o_proj_prompt_avg_diff.pt: [num_layers, hidden_size]
   （全ヘッドを結合した形状。各ヘッドへの分解は後処理で可能）
-- 各層のindex 0が1層目のattention
+
+インデックス規約:
+- index k は model.layers[k] のattention内容（0-indexed transformer block）
+- 保存テンソル形状: [num_layers, hidden_size]
 
 注意点（GQA対応）:
 - Qwen2.5-7B: num_attention_heads=28, num_key_value_heads=4

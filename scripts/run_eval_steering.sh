@@ -1,29 +1,39 @@
 #!/bin/bash
 #
-# run_eval_steering.sh - Standard steering evaluation
+# run_eval_steering.sh - Residual stream (layer output) steering evaluation
 #
 # Usage:
-#   ./scripts/run_eval_steering.sh
+#   ./scripts/run_eval_steering.sh <model> <trait1> [trait2 ...]
 #
-# Configuration via environment variables:
-#   GPU, STEERING_TYPE, PERSONA_INSTRUCTION_TYPE, JUDGE_MODEL
+# Example:
+#   ./scripts/run_eval_steering.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
+#
+# Environment variables (override defaults):
+#   GPU, STEERING_TYPE, PERSONA_INSTRUCTION_TYPE, JUDGE_MODEL, BATCH_SIZE
 
 set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/lib/eval_common.sh"
 
-# ========== Configuration ==========
-TRAITS=("evil" "sycophantic" "hallucinating" "humorous" "passionate" "loser")
-MODELS=("Qwen/Qwen2.5-7B-Instruct" "meta-llama/Llama-3.1-8B-Instruct")
-COEFS=(-3.0 -2.0 -1.0 0.0 1.0 2.0 3.0)
+# ========== Arguments ==========
+if [[ $# -lt 2 ]]; then
+    echo "Usage: $0 <model> <trait1> [trait2 ...]"
+    exit 1
+fi
 
+MODEL="$1"
+shift
+TRAITS=("$@")
+
+# ========== Configuration ==========
+COEFS=(-3.0 -2.0 -1.0 0.0 1.0 2.0 3.0)
 OUTPUT_DIR="data/eval_persona_eval/steering_results"
 
 # ========== Setup ==========
 setup_logging "eval_steering"
 log "Starting steering evaluation at $(date)"
+log "Model: $MODEL"
 log "Traits: ${TRAITS[*]}"
-log "Models: ${MODELS[*]}"
 log "Coefficients: ${COEFS[*]}"
 log_separator
 
@@ -33,28 +43,26 @@ skipped=0
 completed=0
 total=0
 
-for model in "${MODELS[@]}"; do
-    for trait in "${TRAITS[@]}"; do
-        layer=$(get_trait_layer "$model" "$trait")
-        vector_path="data/persona_vectors/$model/${trait}_response_avg_diff.pt"
+for trait in "${TRAITS[@]}"; do
+    layer=$(get_trait_layer "$MODEL" "$trait")
+    vector_path="data/persona_vectors/$MODEL/${trait}_response_avg_diff.pt"
+    
+    for coef in "${COEFS[@]}"; do
+        total=$((total + 1))
+        output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_coef${coef}.csv"
         
-        for coef in "${COEFS[@]}"; do
-            total=$((total + 1))
-            output_path="$OUTPUT_DIR/$model/${trait}_steer_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_coef${coef}.csv"
-            
-            if run_eval_steering "$model" "$trait" "$layer" "$coef" "$vector_path" "$output_path"; then
-                if check_output_exists "$output_path" 2>/dev/null; then
-                    skipped=$((skipped + 1))
-                else
-                    completed=$((completed + 1))
-                fi
-                log "Completed: $trait layer$layer coef$coef"
+        if run_eval_steering "$MODEL" "$trait" "$layer" "$coef" "$vector_path" "$output_path"; then
+            if check_output_exists "$output_path" 2>/dev/null; then
+                skipped=$((skipped + 1))
             else
-                failed+=("$trait-$model-layer$layer-coef$coef")
-                log "Failed: $trait layer$layer coef$coef"
+                completed=$((completed + 1))
             fi
-            log_separator
-        done
+            log "Completed: $trait layer$layer coef$coef"
+        else
+            failed+=("$trait-layer$layer-coef$coef")
+            log "Failed: $trait layer$layer coef$coef"
+        fi
+        log_separator
     done
 done
 

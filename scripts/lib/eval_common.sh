@@ -1,11 +1,15 @@
 #!/bin/bash
 #
-# eval_common.sh - Common functions for steering evaluation scripts
+# eval_common.sh - Common functions for evaluation scripts
 #
 # Usage:
 #   source scripts/lib/eval_common.sh
+#
+# Layer index convention:
+#   --layer k = model.layers[k] (0-indexed transformer block)
+#   All vector files use the same convention: tensor[k] = model.layers[k]
 
-# ========== Default Configuration ==========
+# ========== Default Configuration (override via environment variables) ==========
 : ${GPU:=0}
 : ${STEERING_TYPE:="response"}
 : ${PERSONA_INSTRUCTION_TYPE:="neg"}
@@ -80,22 +84,21 @@ get_num_heads() {
 }
 
 # ========== Trait-Layer Mapping ==========
-# Get best layer for trait-model combination
+# Get best layer for trait-model combination (0-indexed transformer block)
 get_trait_layer() {
     local model=$1
     local trait=$2
     
-    # Default layers based on model
     case "$model" in
-        *"Llama-3.1-8B"*) echo "16" ;;
+        *"Llama-3.1-8B"*) echo "15" ;;
         *"Qwen2.5-7B"*) 
             case "$trait" in
-                "hallucinating") echo "16" ;;
-                *) echo "20" ;;
+                "hallucinating") echo "18" ;;
+                *) echo "19" ;;
             esac
             ;;
-        *"Qwen3-30B"*) echo "32" ;;
-        *) echo "16" ;;
+        *"Qwen3-30B"*) echo "31" ;;
+        *) echo "15" ;;
     esac
 }
 
@@ -124,16 +127,29 @@ print_summary() {
     log "Completed at $(date)"
 }
 
-# ========== Eval Runner ==========
-# Run standard steering evaluation
-run_eval_steering() {
+# ========== Unified Eval Runner ==========
+# Run persona evaluation with any steering mode.
+#
+# All steering modes use src/eval/eval_persona.py with --steering_target.
+#
+# Args:
+#   $1 - model name
+#   $2 - trait
+#   $3 - layer (0-indexed transformer block)
+#   $4 - coef
+#   $5 - vector_path
+#   $6 - output_path
+#   $7 - steering_target ("layer_output", "attn_output", "mlp_output", "head", etc.)
+#   $8 - extra args (optional, e.g., "--head_indices 2,4,27")
+run_eval() {
     local model=$1
     local trait=$2
     local layer=$3
     local coef=$4
     local vector_path=$5
     local output_path=$6
-    local extra_args="${7:-}"
+    local steering_target=${7:-"layer_output"}
+    local extra_args="${8:-}"
     
     mkdir -p "$(dirname "$output_path")"
     
@@ -145,7 +161,7 @@ run_eval_steering() {
         return 1
     fi
     
-    log "Running: trait=$trait layer=$layer coef=$coef"
+    log "Running: trait=$trait layer=$layer coef=$coef target=$steering_target"
     
     local output
     output=$(run_python src/eval/eval_persona.py \
@@ -154,6 +170,7 @@ run_eval_steering() {
         --output_path "$output_path" \
         --version eval \
         --steering_type "$STEERING_TYPE" \
+        --steering_target "$steering_target" \
         --coef "$coef" \
         --vector_path "$vector_path" \
         --persona_instruction_type "$PERSONA_INSTRUCTION_TYPE" \
@@ -170,7 +187,23 @@ run_eval_steering() {
     return $exit_code
 }
 
-# Run block steering evaluation
+# ========== Convenience Wrappers ==========
+
+# Run layer output (residual stream) steering
+run_eval_steering() {
+    local model=$1
+    local trait=$2
+    local layer=$3
+    local coef=$4
+    local vector_path=$5
+    local output_path=$6
+    local extra_args="${7:-}"
+    
+    run_eval "$model" "$trait" "$layer" "$coef" "$vector_path" "$output_path" \
+        "layer_output" "$extra_args"
+}
+
+# Run block steering
 run_eval_steering_block() {
     local model=$1
     local trait=$2
@@ -180,42 +213,11 @@ run_eval_steering_block() {
     local vector_path=$6
     local output_path=$7
     
-    mkdir -p "$(dirname "$output_path")"
-    
-    if check_output_exists "$output_path"; then
-        return 0
-    fi
-    
-    if ! check_vector_exists "$vector_path"; then
-        return 1
-    fi
-    
-    log "Running: trait=$trait layer=$layer coef=$coef block_type=$block_type"
-    
-    local output
-    output=$(run_python src/eval/eval_persona_steer_block.py \
-        --model "$model" \
-        --trait "$trait" \
-        --output_path "$output_path" \
-        --version eval \
-        --steering_type "$STEERING_TYPE" \
-        --block_steering_type "$block_type" \
-        --coef "$coef" \
-        --vector_path "$vector_path" \
-        --persona_instruction_type "$PERSONA_INSTRUCTION_TYPE" \
-        --layer "$layer" \
-        --judge_model "$JUDGE_MODEL" \
-        --batch_size "$BATCH_SIZE" \
-        --n_per_question "$N_PER_QUESTION")
-    local exit_code=$?
-    
-    echo "$output"
-    echo "$output" | awk '/\.csv$/ || /:  [0-9]+\.[0-9]+ \+\- [0-9]+\.[0-9]+/ {print}' >> "$LOG_FILE"
-    
-    return $exit_code
+    run_eval "$model" "$trait" "$layer" "$coef" "$vector_path" "$output_path" \
+        "$block_type"
 }
 
-# Run head steering evaluation
+# Run head steering
 run_eval_steering_head() {
     local model=$1
     local trait=$2
@@ -225,37 +227,6 @@ run_eval_steering_head() {
     local vector_path=$6
     local output_path=$7
     
-    mkdir -p "$(dirname "$output_path")"
-    
-    if check_output_exists "$output_path"; then
-        return 0
-    fi
-    
-    if ! check_vector_exists "$vector_path"; then
-        return 1
-    fi
-    
-    log "Running: trait=$trait layer=$layer coef=$coef heads=$head_indices"
-    
-    local output
-    output=$(run_python src/eval/eval_persona_steer_head.py \
-        --model "$model" \
-        --trait "$trait" \
-        --output_path "$output_path" \
-        --version eval \
-        --steering_type "$STEERING_TYPE" \
-        --coef "$coef" \
-        --vector_path "$vector_path" \
-        --persona_instruction_type "$PERSONA_INSTRUCTION_TYPE" \
-        --layer "$layer" \
-        --head_indices "$head_indices" \
-        --judge_model "$JUDGE_MODEL" \
-        --batch_size "$BATCH_SIZE" \
-        --n_per_question "$N_PER_QUESTION")
-    local exit_code=$?
-    
-    echo "$output"
-    echo "$output" | awk '/\.csv$/ || /:  [0-9]+\.[0-9]+ \+\- [0-9]+\.[0-9]+/ {print}' >> "$LOG_FILE"
-    
-    return $exit_code
+    run_eval "$model" "$trait" "$layer" "$coef" "$vector_path" "$output_path" \
+        "head" "--head_indices $head_indices"
 }

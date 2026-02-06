@@ -8,6 +8,10 @@ generate_vec_block.py - Block入力・出力とLayerNorm入力からPersona Vect
 - mlp_layernorm: MLP前のLayerNormへの入力
 - mlp: MLP Blockへの入力（LayerNormの出力）
 - mlp_output: MLP Blockの出力
+
+インデックス規約:
+- index k は model.layers[k] の内容（0-indexed transformer block）
+- 保存テンソル形状: [num_layers, hidden_size]
 """
 
 import gc

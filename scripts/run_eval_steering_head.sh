@@ -7,6 +7,9 @@
 #
 # Example:
 #   ./scripts/run_eval_steering_head.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
+#
+# Environment variables (override defaults):
+#   GPU, STEERING_TYPE, PERSONA_INSTRUCTION_TYPE, JUDGE_MODEL, BATCH_SIZE
 
 set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,9 +26,8 @@ shift
 TRAITS=("$@")
 
 # ========== Configuration ==========
-# Get model-specific config
 NUM_HEADS=$(get_num_heads "$MODEL")
-LAYERS=(19)  # Specify layers to analyze
+LAYERS=(19)  # 0-indexed transformer block (19 = 20th block)
 COEF=7.0
 HEAD_MODE="individual"  # "individual" or "all"
 
@@ -80,7 +82,6 @@ for trait in "${TRAITS[@]}"; do
             # Test all heads together
             total=$((total + 1))
             all_heads=$(seq -s, 0 $((NUM_HEADS - 1)))
-            head_str="0-$((NUM_HEADS - 1))"
             output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_head_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer${layer}_headall_coef${COEF}.csv"
             
             if run_eval_steering_head "$MODEL" "$trait" "$layer" "$COEF" "$all_heads" "$vector_path" "$output_path"; then
