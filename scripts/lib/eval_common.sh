@@ -9,7 +9,9 @@
 #   --layer k = model.layers[k] (0-indexed transformer block)
 #   All vector files use the same convention: tensor[k] = model.layers[k]
 
-# ========== Default Configuration (override via environment variables) ==========
+# ========== Default Configuration (fallback if not set by calling script) ==========
+# Note: Each .sh script sets these defaults explicitly before sourcing this file.
+# These are fallback defaults only.
 : ${GPU:=0}
 : ${STEERING_TYPE:="response"}
 : ${PERSONA_INSTRUCTION_TYPE:="neg"}

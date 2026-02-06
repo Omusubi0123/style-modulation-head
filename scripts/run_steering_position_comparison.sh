@@ -17,13 +17,22 @@
 #   MODEL, LAYER, NUM_HEADS, CORRELATED_HEADS, CORRELATED_ANTI_HEADS,
 #   NUM_CORRELATED_HEADS, NUM_CORRELATED_ANTI_HEADS
 #
-# Environment variables (override defaults):
-#   GPU, STEERING_TYPE, JUDGE_MODEL, BATCH_SIZE,
+# Configuration is set in the script (can be overridden via environment variables):
+#   GPU, STEERING_TYPE, JUDGE_MODEL, BATCH_SIZE, N_PER_QUESTION,
 #   TRAITS, BASE_COEFS, HEAD_ADDITIONAL_COEFS,
 #   POSITIONS, INSTRUCTION_TYPES
 
 set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ========== Default Configuration ==========
+# Set default values (can be overridden via environment variables)
+GPU="${GPU:-0}"
+STEERING_TYPE="${STEERING_TYPE:-response}"
+JUDGE_MODEL="${JUDGE_MODEL:-gpt-4.1-mini-2025-04-14}"
+BATCH_SIZE="${BATCH_SIZE:-100}"
+N_PER_QUESTION="${N_PER_QUESTION:-5}"
+
 source "$SCRIPT_DIR/lib/eval_common.sh"
 
 # ========== Validate Required Variables ==========

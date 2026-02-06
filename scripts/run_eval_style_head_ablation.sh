@@ -11,12 +11,24 @@
 # Example:
 #   ./scripts/run_eval_style_head_ablation.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
 #
-# Environment variables (override defaults):
+# Configuration is set in the script (can be overridden via environment variables):
 #   GPU, PERSONA_INSTRUCTION_TYPE, JUDGE_MODEL, BATCH_SIZE,
 #   N_PER_QUESTION, MAX_TOKENS, POSITIONS, VERSION
 
 set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ========== Default Configuration ==========
+# Set default values (can be overridden via environment variables)
+GPU="${GPU:-0}"
+PERSONA_INSTRUCTION_TYPE="${PERSONA_INSTRUCTION_TYPE:-pos}"
+JUDGE_MODEL="${JUDGE_MODEL:-gpt-4.1-mini-2025-04-14}"
+BATCH_SIZE="${BATCH_SIZE:-100}"
+N_PER_QUESTION="${N_PER_QUESTION:-5}"
+MAX_TOKENS="${MAX_TOKENS:-1000}"
+POSITIONS="${POSITIONS:-all}"      # "all", "prompt", "response"
+VERSION="${VERSION:-eval}"
+
 source "$SCRIPT_DIR/lib/eval_common.sh"
 
 # ========== Arguments ==========
@@ -30,11 +42,6 @@ shift
 TRAITS=("$@")
 
 # ========== Configuration ==========
-: ${MAX_TOKENS:=1000}
-: ${N_PER_QUESTION:=5}
-: ${POSITIONS:="all"}      # "all", "prompt", "response"
-: ${VERSION:="eval"}
-
 OUTPUT_BASE_DIR="data/eval_persona_eval/style_head_ablation_${POSITIONS}"
 
 # ========== Helper ==========

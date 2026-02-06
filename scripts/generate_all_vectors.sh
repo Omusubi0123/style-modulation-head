@@ -14,7 +14,7 @@
 # Example:
 #   ./scripts/generate_all_vectors.sh "Qwen/Qwen2.5-7B-Instruct" evil humorous
 #
-# Environment variables (override defaults):
+# Configuration is set in the script (can be overridden via environment variables):
 #   GPU, THRESHOLD
 
 set -o pipefail
@@ -29,9 +29,10 @@ MODEL="$1"
 shift
 TRAITS=("$@")
 
-# ========== Configuration ==========
-: ${GPU:=0}
-: ${THRESHOLD:=50}
+# ========== Default Configuration ==========
+# Set default values (can be overridden via environment variables)
+GPU="${GPU:-0}"
+THRESHOLD="${THRESHOLD:-50}"
 
 # ========== Setup ==========
 mkdir -p logs data/eval_persona_extract data/persona_vectors
