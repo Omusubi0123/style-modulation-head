@@ -345,7 +345,7 @@ def main(
     # Style Head CSVのパスを決定
     if style_head_csv is None:
         model_short_name = get_model_short_name(model)
-        style_head_csv = f"style_head/{model_short_name}.csv"
+        style_head_csv = f"data/ablation_head_config/{model_short_name}.csv"
 
     print(f"Model: {model}")
     print(f"Trait: {trait}")

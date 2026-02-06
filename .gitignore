@@ -2,6 +2,7 @@
 __pycache__/
 data/*
 !data/.gitkeep
+!data/ablation_head_config/
 logs/
 *.zip
 .env
