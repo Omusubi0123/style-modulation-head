@@ -8,7 +8,7 @@ Steering positions:
 - post_mlp: Residual stream after MLP addition
 
 Usage:
-    python eval/eval_persona_steer_residual_stream.py \
+    uv run python src/eval/eval_persona_steer_residual_stream.py \
         --model Qwen/Qwen2.5-7B-Instruct \
         --trait evil \
         --output_path results/residual_steering.csv \
@@ -48,6 +48,7 @@ from tqdm import tqdm
 from src.config import setup_credentials
 from src.eval.common.judge import run_judge_evaluations
 from src.eval.common.loaders import load_persona_questions
+from src.eval.common.question import Question
 from src.eval.common.utils import print_results
 from src.eval.model_utils import load_model, load_vllm_model
 from src.eval.sampling import sample_vllm, sample_with_block_steering
@@ -77,13 +78,14 @@ def _residual_to_block_type(residual_position: str) -> str:
 
 
 async def eval_batched(
-    questions: list,
+    questions: list[Question],
     llm: object,
     tokenizer: object,
     coef: float,
     vector: torch.Tensor | None = None,
     layer: int | None = None,
     residual_position: str = "post_attention",
+    block_steering_type: str = "attn_output",
     batch_size: int = 100,
     n_per_question: int = 5,
     max_concurrent_judges: int = 4,
@@ -121,7 +123,6 @@ async def eval_batched(
             temperature=questions[0].temperature,
             max_tokens=max_tokens,
             steering_type=steering_type,
-            renorm_after_steering=renorm_after_steering,
         )
     else:
         prompts, answers = sample_vllm(
@@ -163,8 +164,6 @@ def main(
     assistant_name: str | None = None,
     judge_model: str = "gpt-4.1-mini-2025-04-14",
     version: str = "extract",
-    overwrite: bool = False,
-    renorm_after_steering: bool = False,
 ):
     """Execute evaluation with Residual Stream steering
 
@@ -186,10 +185,8 @@ def main(
         assistant_name: Assistant name (optional)
         judge_model: Judge model name
         version: Data version (default: "extract")
-        overwrite: Overwrite existing file (default: False)
-        renorm_after_steering: Renormalize norm after steering
     """
-    if os.path.exists(output_path) and not overwrite:
+    if os.path.exists(output_path):
         print(f"Output path {output_path} already exists, skipping...")
         df = pd.read_csv(output_path)
         print_results(df, trait)
@@ -289,7 +286,7 @@ def main(
         outputs = pd.concat(outputs)
 
     outputs.to_csv(output_path, index=False)
-    print(output_path)
+    print(f"Saved to: {output_path}")
     print_results(outputs, trait)
 
 

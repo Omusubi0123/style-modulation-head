@@ -1,7 +1,3 @@
-"""
-openai_judge.py - OpenAI-based evaluation judge
-"""
-
 import asyncio
 import math
 

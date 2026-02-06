@@ -21,14 +21,6 @@ config = setup_credentials()
 
 
 def load_jsonl(file_path: str) -> list[dict]:
-    """Load JSONL file and return as list of dictionaries
-
-    Args:
-        file_path: Path to JSONL file to load
-
-    Returns:
-        list of parsed JSON objects from each line
-    """
     with open(file_path, "r") as f:
         return [json.loads(line) for line in f]
 

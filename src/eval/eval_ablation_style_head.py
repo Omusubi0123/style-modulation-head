@@ -18,24 +18,22 @@ Style Headを累積的にZero Ablationしていき、
 """
 
 import asyncio
-import json
 import logging
 import os
-import random
 
 import pandas as pd
 import torch
 from tqdm import tqdm, trange
 
 from eval.model_utils import load_model
-from eval.prompts import Prompts
 from src.activation_steer.activation_ablator_head import (
     ActivationAblatorHeadMultiple,
     load_style_heads_from_csv,
 )
 from src.chat_template_utils import apply_chat_template_safe
 from src.config import setup_credentials
-from src.eval.common.openai_judge import OpenAiJudge
+from src.eval.common.loaders import load_persona_questions
+from src.eval.common.utils import get_model_short_name
 
 logging.getLogger("openai").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -44,22 +42,11 @@ logging.getLogger("httpx").setLevel(logging.ERROR)
 config = setup_credentials()
 
 
-def get_model_short_name(model_name: str) -> str:
-    """モデル名からCSVファイル名用の短縮名を取得する
-
-    例:
-    - "Qwen/Qwen2.5-7B-Instruct" -> "qwen2.5-7b-instruct"
-    - "meta-llama/Llama-3.1-8B-Instruct" -> "llama-3.1-8b-instruct"
-    """
-    short_name = model_name.split("/")[-1].lower()
-    return short_name
-
-
 def sample_with_ablation(
-    model,
-    tokenizer,
-    conversations,
-    ablation_instructions: list[dict],
+    model: object,
+    tokenizer: object,
+    conversations: list[list[dict]],
+    ablation_instructions: list[dict] = None,
     positions: str = "response",
     bs: int = 100,
     top_p: float = 1,
@@ -204,112 +191,6 @@ def sample_without_ablation(
         outputs.extend(batch_outputs)
 
     return prompts, outputs
-
-
-def load_jsonl(path):
-    """JSONLファイルを読み込んで辞書のリストとして返す"""
-    with open(path, "r") as f:
-        return [json.loads(line) for line in f.readlines() if line.strip()]
-
-
-class Question:
-    """評価用の質問クラス"""
-
-    def __init__(
-        self,
-        id: str,
-        paraphrases: list[str],
-        judge_prompts: dict,
-        temperature: float = 1,
-        system: str = None,
-        judge: str = "gpt-4.1-mini-2025-04-14",
-        judge_eval_type: str = "0_100",
-        **ignored_extra_args,
-    ):
-        self.id = id
-        self.paraphrases = paraphrases
-        self.temperature = temperature
-        self.system = system
-        self.judges = {
-            metric: OpenAiJudge(
-                judge,
-                prompt,
-                eval_type=judge_eval_type if metric != "coherence" else "0_100",
-            )
-            for metric, prompt in judge_prompts.items()
-        }
-
-    def get_input(self, n_per_question):
-        paraphrases = random.choices(self.paraphrases, k=n_per_question)
-        conversations = [[dict(role="user", content=i)] for i in paraphrases]
-        if self.system:
-            conversations = [
-                [dict(role="system", content=self.system)] + c for c in conversations
-            ]
-        return paraphrases, conversations
-
-
-def a_or_an(word):
-    """英語の不定冠詞を決定するヘルパー関数"""
-    return "an" if word[0].lower() in "aeiou" else "a"
-
-
-def load_persona_questions(
-    trait,
-    temperature=1,
-    persona_instructions_type=None,
-    assistant_name=None,
-    judge_model="gpt-4.1-mini-2025-04-14",
-    eval_type="0_100",
-    version="eval",
-):
-    """ペルソナ評価用の質問リストを読み込み、Questionオブジェクトのリストを作成する"""
-    trait_data = json.load(
-        open(f"data_generation/trait_data_{version}/{trait}.json", "r")
-    )
-    judge_prompts = {}
-    prompt_template = trait_data["eval_prompt"]
-    judge_prompts[trait] = prompt_template
-    judge_prompts["coherence"] = Prompts[f"coherence_{eval_type}"]
-    raw_questions = trait_data["questions"]
-    questions = []
-    for i, question in enumerate(raw_questions):
-        if persona_instructions_type is not None:
-            persona_instructions = [
-                x[persona_instructions_type] for x in trait_data["instruction"]
-            ]
-            for k, instruction in enumerate(persona_instructions):
-                if assistant_name is None:
-                    if persona_instructions_type == "pos":
-                        assistant_name_to_use = trait
-                    else:
-                        assistant_name_to_use = "helpful"
-                else:
-                    assistant_name_to_use = assistant_name
-                system = f"You are {a_or_an(assistant_name_to_use)} {assistant_name_to_use} assistant. {instruction}"
-                questions.append(
-                    Question(
-                        paraphrases=[question],
-                        id=f"{trait}_{i}_{persona_instructions_type}_{k}",
-                        judge_prompts=judge_prompts,
-                        judge=judge_model,
-                        temperature=temperature,
-                        system=system,
-                        judge_eval_type=eval_type,
-                    )
-                )
-        else:
-            questions.append(
-                Question(
-                    paraphrases=[question],
-                    id=f"{trait}_{i}",
-                    judge_prompts=judge_prompts,
-                    judge=judge_model,
-                    temperature=temperature,
-                    judge_eval_type=eval_type,
-                )
-            )
-    return questions
 
 
 async def eval_batched(

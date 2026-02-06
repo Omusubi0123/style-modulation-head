@@ -1,7 +1,3 @@
-"""
-loaders.py - Data loading utilities
-"""
-
 import json
 
 from src.eval.common.question import Question

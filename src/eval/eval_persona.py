@@ -15,6 +15,7 @@ from tqdm import tqdm
 from src.config import setup_credentials
 from src.eval.common.judge import run_judge_evaluations
 from src.eval.common.loaders import load_persona_questions
+from src.eval.common.question import Question
 from src.eval.common.utils import print_results
 from src.eval.model_utils import load_model, load_vllm_model
 from src.eval.sampling import sample_vllm, sample_with_steering
@@ -26,17 +27,17 @@ config = setup_credentials()
 
 
 async def eval_batched(
-    questions,
-    llm,
-    tokenizer,
-    coef,
-    vector=None,
-    layer=None,
-    batch_size=100,
-    n_per_question=5,
-    max_concurrent_judges=4,
-    max_tokens=1000,
-    steering_type="response",
+    questions: list[Question],
+    llm: object,
+    tokenizer: object,
+    coef: float,
+    vector: torch.Tensor | None = None,
+    layer: int | None = None,
+    batch_size: int = 100,
+    n_per_question: int = 5,
+    max_concurrent_judges: int = 4,
+    max_tokens: int = 1000,
+    steering_type: str = "response",
 ):
     """Process all questions in batch for fast inference"""
     # Collect all prompts
@@ -89,22 +90,22 @@ async def eval_batched(
 
 
 def main(
-    model,
-    trait,
-    output_path,
-    coef=0,
-    vector_path=None,
-    layer=None,
-    steering_type="response",
-    max_tokens=1000,
-    n_per_question=5,
-    batch_process=True,
-    max_concurrent_judges=4,
-    batch_size=100,
-    persona_instruction_type=None,
-    assistant_name=None,
-    judge_model="gpt-4.1-mini-2025-04-14",
-    version="extract",
+    model: str,
+    trait: str,
+    output_path: str,
+    coef: float = 0,
+    vector_path: str | None = None,
+    layer: int | None = None,
+    steering_type: str = "response",
+    max_tokens: int = 1000,
+    n_per_question: int = 5,
+    batch_process: bool = True,
+    max_concurrent_judges: int = 4,
+    batch_size: int = 100,
+    persona_instruction_type: str | None = None,
+    assistant_name: str | None = None,
+    judge_model: str = "gpt-4.1-mini-2025-04-14",
+    version: str = "extract",
 ):
     """Execute evaluation
 
@@ -126,7 +127,12 @@ def main(
         judge_model: Judge model name
         version: Data version (default: "extract")
     """
-    print(output_path)
+    if os.path.exists(output_path):
+        print(f"Output path {output_path} already exists, skipping...")
+        df = pd.read_csv(output_path)
+        print_results(df, trait)
+        return
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     temperature = 0.0 if n_per_question == 1 else 1.0
@@ -212,7 +218,7 @@ def main(
         outputs = pd.concat(outputs)
 
     outputs.to_csv(output_path, index=False)
-    print(output_path)
+    print(f"Saved to: {output_path}")
     print_results(outputs, trait)
 
 

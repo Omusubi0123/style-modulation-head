@@ -81,7 +81,6 @@ class ActivationSteererBlock(BaseActivationSteerer):
         layer_idx: int = -1,
         positions: str = "all",
         steering_type: str = "attn",
-        renorm_to_original_norm: bool = False,
         debug: bool = False,
     ):
         """Constructor

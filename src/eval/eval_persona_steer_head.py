@@ -15,6 +15,7 @@ from tqdm import tqdm
 from src.config import setup_credentials
 from src.eval.common.judge import run_judge_evaluations
 from src.eval.common.loaders import load_persona_questions
+from src.eval.common.question import Question
 from src.eval.common.utils import print_results
 from src.eval.model_utils import load_model, load_vllm_model
 from src.eval.sampling import sample_vllm, sample_with_head_steering
@@ -26,7 +27,7 @@ config = setup_credentials()
 
 
 async def eval_batched(
-    questions: list,
+    questions: list[Question],
     llm: object,
     tokenizer: object,
     coef: float,
@@ -113,7 +114,6 @@ def main(
     assistant_name: str | None = None,
     judge_model: str = "gpt-4.1-mini-2025-04-14",
     version: str = "extract",
-    overwrite: bool = False,
 ):
     """Execute evaluation with head steering
 
@@ -135,9 +135,8 @@ def main(
         assistant_name: Assistant name (optional)
         judge_model: Judge model name
         version: Data version (default: "extract")
-        overwrite: Overwrite existing file (default: False)
     """
-    if os.path.exists(output_path) and not overwrite:
+    if os.path.exists(output_path):
         print(f"Output path {output_path} already exists, skipping...")
         df = pd.read_csv(output_path)
         print_results(df, trait)
@@ -259,7 +258,7 @@ def main(
         outputs["head_indices"] = str(head_indices)
 
     outputs.to_csv(output_path, index=False)
-    print(output_path)
+    print(f"Saved to: {output_path}")
     print_results(outputs, trait)
 
 

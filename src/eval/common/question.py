@@ -1,7 +1,3 @@
-"""
-question.py - Question class for evaluation
-"""
-
 import random
 
 from src.eval.common.openai_judge import OpenAiJudge

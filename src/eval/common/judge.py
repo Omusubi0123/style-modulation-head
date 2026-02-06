@@ -1,7 +1,3 @@
-"""
-judge.py - Judge evaluation functionality
-"""
-
 import asyncio
 
 import pandas as pd

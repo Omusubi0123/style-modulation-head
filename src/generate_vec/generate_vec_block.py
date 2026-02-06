@@ -10,7 +10,6 @@ generate_vec_block.py - Block入力・出力とLayerNorm入力からPersona Vect
 - mlp_output: MLP Blockの出力
 """
 
-import argparse
 import gc
 import os
 
@@ -417,20 +416,6 @@ def save_persona_vector(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, required=True)
-    parser.add_argument("--pos_path", type=str, required=True)
-    parser.add_argument("--neg_path", type=str, required=True)
-    parser.add_argument("--trait", type=str, required=True)
-    parser.add_argument("--save_dir", type=str, required=True)
-    parser.add_argument("--threshold", type=int, default=50)
-    args = parser.parse_args()
+    from fire import Fire
 
-    save_persona_vector(
-        args.model_name,
-        args.pos_path,
-        args.neg_path,
-        args.trait,
-        args.save_dir,
-        args.threshold,
-    )
+    Fire(save_persona_vector)

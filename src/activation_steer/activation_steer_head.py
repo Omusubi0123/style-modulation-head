@@ -46,7 +46,6 @@ class ActivationSteererHead(BaseActivationSteerer):
             coeff=coeff,
             layer_idx=layer_idx,
             positions=positions,
-            renorm_to_original_norm=False,
             debug=debug,
         )
 

@@ -1,7 +1,3 @@
-"""
-utils.py - Evaluation utility functions
-"""
-
 import pandas as pd
 
 
@@ -19,3 +15,16 @@ def print_results(outputs: pd.DataFrame, trait: str) -> None:
     """
     for t in [trait, "coherence"]:
         print(f"{t}:  {outputs[t].mean():.2f} +- {outputs[t].std():.2f}")
+
+
+def get_model_short_name(model_name: str) -> str:
+    """Get short model name for CSV file name
+
+    Args:
+        model_name: Model name
+
+    Returns:
+        Short model name
+    """
+    short_name = model_name.split("/")[-1].lower()
+    return short_name

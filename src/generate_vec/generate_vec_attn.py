@@ -15,7 +15,6 @@ Attention内部のattn_weights @ Vの結果（O projection前）をキャプチ�
 - O projection前の出力は常にnum_attention_heads * head_dimの次元
 """
 
-import argparse
 import gc
 import os
 
@@ -309,22 +308,6 @@ def save_persona_vector(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate Persona Vector from OV pre-projection (attn_weights @ V)"
-    )
-    parser.add_argument("--model_name", type=str, required=True)
-    parser.add_argument("--pos_path", type=str, required=True)
-    parser.add_argument("--neg_path", type=str, required=True)
-    parser.add_argument("--trait", type=str, required=True)
-    parser.add_argument("--save_dir", type=str, required=True)
-    parser.add_argument("--threshold", type=int, default=50)
-    args = parser.parse_args()
+    from fire import Fire
 
-    save_persona_vector(
-        args.model_name,
-        args.pos_path,
-        args.neg_path,
-        args.trait,
-        args.save_dir,
-        args.threshold,
-    )
+    Fire(save_persona_vector)

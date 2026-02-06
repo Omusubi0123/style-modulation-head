@@ -164,7 +164,6 @@ def sample_with_block_steering(
     temperature: float = 1.0,
     min_tokens: int = 1,
     steering_type: str = "response",
-    renorm_after_steering: bool = False,
 ) -> Tuple[list[str], list[str]]:
     """Generate model responses using block position steering vector
 
@@ -188,7 +187,6 @@ def sample_with_block_steering(
         temperature: Sampling temperature
         min_tokens: Minimum generation tokens
         steering_type: Position steering type ("response", "prompt", "all")
-        renorm_after_steering: Whether to renormalize after steering
 
     Returns:
         tuple: (list of prompts, list of responses)
@@ -219,7 +217,6 @@ def sample_with_block_steering(
             layer_idx=layer,
             positions=steering_type,
             steering_type=block_steering_type,
-            renorm_to_original_norm=renorm_after_steering,
         )
 
         with steerer:
