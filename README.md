@@ -21,6 +21,8 @@ This repository provides tools for:
 
 Default traits include: `evil`, `sycophantic`, `hallucinating`, `humorous`, `passionate`, `loser`
 
+**Note:** Trait data for `evil`, `sycophantic`, and `hallucinating` are sourced from the [Persona Vectors repository](https://github.com/safety-research/persona_vectors) and must be downloaded separately using `./scripts/download_persona_vectors_data.sh` (see Installation step 3).
+
 Custom traits can be added by creating new JSON files in `data_generation/trait_data_eval/` and `data_generation/trait_data_extract/`.
 
 ## Environment Setup
@@ -44,7 +46,18 @@ cd style-modulation-head
 uv sync
 ```
 
-3. **Set up environment variables** (Step 0):
+3. **Download trait data from Persona Vectors repository** (Step 0):
+
+Some trait data files (`evil`, `sycophantic`, `hallucinating`) are sourced from the [Persona Vectors repository](https://github.com/safety-research/persona_vectors) and are not included in this repository due to licensing considerations.
+
+Download these files:
+```bash
+./scripts/download_persona_vectors_data.sh
+```
+
+This will download the required JSON files to `data_generation/trait_data_eval/` and `data_generation/trait_data_extract/`.
+
+4. **Set up environment variables** (Step 0):
 
 Create a `.env` file from the example template:
 ```bash
@@ -94,6 +107,7 @@ style-modulation-head/
 │   ├── trait_data_eval/      # Questions for steering evaluation
 │   └── trait_data_extract/   # Questions for vector extraction
 ├── scripts/                   # Shell scripts for running experiments
+│   ├── download_persona_vectors_data.sh  # Download trait data from Persona Vectors repo
 │   ├── generate_all_vectors.sh
 │   ├── run_eval_steering.sh
 │   ├── run_eval_steering_block.sh
@@ -395,6 +409,12 @@ The evaluation uses an LLM-as-judge approach with two metrics:
 2. **Coherency Score (0-100)**: How coherent and well-formed the response is
 
 The goal is to maximize trait score while maintaining high coherency.
+
+## Acknowledgments
+
+This repository uses trait data files (`evil`, `sycophantic`, `hallucinating`) from the [Persona Vectors repository](https://github.com/safety-research/persona_vectors) by the safety-research team. These files are downloaded separately and are not included in this repository.
+
+Some code implementations in this repository were inspired by or adapted from the Persona Vectors repository. We thank the authors for their valuable contributions to the field.
 
 ## License
 
