@@ -416,11 +416,11 @@ The goal is to maximize trait score while maintaining high coherency.
 If you use this repository in your research, please cite:
 
 ```bibtex
-@software{style_modulation_head2025,
+@software{style_modulation_head2026,
   author = {Izawa, Yoshihiro},
   title = {style-modulation-head},
   url = {https://github.com/omusubi0123/style-modulation-head},
-  year = {2025},
+  year = {2026},
   institution = {The University of Tokyo}
 }
 ```
