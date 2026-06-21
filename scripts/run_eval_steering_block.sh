@@ -61,7 +61,14 @@ total=0
 
 for trait in "${TRAITS[@]}"; do
     for block_type in "${BLOCK_TYPES[@]}"; do
-        vector_path="data/persona_vectors/$MODEL/${trait}_response_avg_diff_${block_type}.pt"
+        # For mlp_output steering, the post-MLP residual stream direction is captured at
+        # the next layer's attn_layernorm input (layer N+1), not at layer N's mlp_output.
+        # Hook remains at layer N's mlp_output; only the vector source changes.
+        if [[ "$block_type" == "mlp_output" ]]; then
+            vector_path="data/persona_vectors/$MODEL/${trait}_response_avg_diff_attn_layernorm.pt"
+        else
+            vector_path="data/persona_vectors/$MODEL/${trait}_response_avg_diff_${block_type}.pt"
+        fi
         
         if ! check_vector_exists "$vector_path"; then
             log "Skipping $trait $block_type (vector not found)"
@@ -72,7 +79,14 @@ for trait in "${TRAITS[@]}"; do
             total=$((total + 1))
             output_path="$OUTPUT_DIR/$MODEL/${trait}_steer_block_${block_type}_${STEERING_TYPE}_${PERSONA_INSTRUCTION_TYPE}_layer$((layer+1))_coef${COEF}.csv"
             
-            if run_eval_steering_block "$MODEL" "$trait" "$layer" "$COEF" "$block_type" "$vector_path" "$output_path"; then
+            # For mlp_output, load vector at layer+1 (post-MLP residual = next layer's attn input)
+            if [[ "$block_type" == "mlp_output" ]]; then
+                extra_args="--vector_layer $((layer+1))"
+            else
+                extra_args=""
+            fi
+            
+            if run_eval_steering_block "$MODEL" "$trait" "$layer" "$COEF" "$block_type" "$vector_path" "$output_path" "$extra_args"; then
                 if check_output_exists "$output_path" 2>/dev/null; then
                     skipped=$((skipped + 1))
                 else

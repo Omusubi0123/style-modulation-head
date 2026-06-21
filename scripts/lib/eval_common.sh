@@ -214,9 +214,10 @@ run_eval_steering_block() {
     local block_type=$5
     local vector_path=$6
     local output_path=$7
+    local extra_args="${8:-}"
     
     run_eval "$model" "$trait" "$layer" "$coef" "$vector_path" "$output_path" \
-        "$block_type"
+        "$block_type" "$extra_args"
 }
 
 # Run head steering

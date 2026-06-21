@@ -249,6 +249,7 @@ def main(
     coef: float = 0,
     vector_path: str | None = None,
     layer: int | None = None,
+    vector_layer: int | None = None,
     steering_target: str = "layer_output",
     head_indices: list[int] | int | tuple | str | None = None,
     steering_type: str = "response",
@@ -270,7 +271,12 @@ def main(
         output_path: CSV file path to save results
         coef: Steering coefficient (0 = no steering)
         vector_path: Path to steering vector file (.pt)
-        layer: Layer index (0-based transformer block). tensor[layer] is loaded.
+        layer: Layer index (0-based transformer block). Determines hook position.
+        vector_layer: Layer index to load from vector_path (default: same as layer).
+            Use when the vector index differs from the hook layer, e.g. for
+            mlp_output steering where the post-MLP residual stream direction is
+            captured at layer N+1's attn_layernorm input (vector_layer=layer+1)
+            while the hook is placed at layer N's MLP output (layer=N).
         steering_target: Steering target type:
             "layer_output"   - Transformer block output (residual stream)
             "attn"           - Attention block input (post-LayerNorm)
@@ -330,8 +336,16 @@ def main(
     # Load model and optionally load steering vector
     if needs_steering:
         llm, tokenizer = load_model(model)
-        vector = torch.load(vector_path, weights_only=False)[layer]
-        print(f"Loaded vector from {vector_path}[{layer}], shape: {vector.shape}")
+        actual_vector_layer = vector_layer if vector_layer is not None else layer
+        vector = torch.load(vector_path, weights_only=False)[actual_vector_layer]
+        print(
+            f"Loaded vector from {vector_path}[{actual_vector_layer}], shape: {vector.shape}"
+        )
+        if actual_vector_layer != layer:
+            print(
+                f"  (hook layer={layer}, vector_layer={actual_vector_layer}: "
+                "post-MLP residual stream uses next layer's attn_layernorm direction)"
+            )
     else:
         llm, tokenizer = load_vllm_model(model)
         vector = None

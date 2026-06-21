@@ -99,7 +99,8 @@ run_position_1() {
 }
 
 # Position 2: Post-MLP residual stream
-# Vector: attn_layernorm direction, Applied at: mlp_output
+# Vector: attn_layernorm[LAYER+1] direction (post-MLP residual = layer N+1's attn input)
+# Applied at: mlp_output of layer LAYER (steers via residual addition into the stream)
 run_position_2() {
     local trait=$1 instruction_type=$2 coef=$3 coef_label=$4 coef_sign=$5
     local actual_coef=$(echo "scale=6; $coef * $coef_sign" | bc)
@@ -111,8 +112,10 @@ run_position_2() {
     check_vector_file "$trait" "attn_layernorm" || return 1
     check_output_exists "$output_path" && return 0
 
+    # Hook at layer LAYER's mlp_output; vector from layer LAYER+1 (post-MLP residual direction)
     PERSONA_INSTRUCTION_TYPE="$instruction_type" \
-    run_eval "$MODEL" "$trait" "$LAYER" "$actual_coef" "$vector_path" "$output_path" "mlp_output"
+    run_eval "$MODEL" "$trait" "$LAYER" "$actual_coef" "$vector_path" "$output_path" \
+        "mlp_output" "--vector_layer $((LAYER+1))"
 }
 
 # Position 3: Attention output (before residual addition)
